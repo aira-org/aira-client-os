@@ -34,8 +34,8 @@ export function LinkCodeDisplay({
     }
   };
 
-  // Format code with spaces: 12345678 -> 1234 5678
-  const formattedCode = code.slice(0, 4) + ' ' + code.slice(4);
+  // Format code into two chips: 12345678 -> [1234, 5678]
+  const formattedCode = code ? [code.slice(0, 4), code.slice(4)] : [];
 
   return (
     <Card className={cn('overflow-hidden', className)}>
@@ -50,19 +50,30 @@ export function LinkCodeDisplay({
               key={code}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="font-mono text-4xl font-bold tracking-[0.2em] text-foreground md:text-5xl"
+              className="flex items-center justify-center gap-2 font-mono text-3xl font-bold text-foreground md:text-4xl"
             >
-              {formattedCode}
+              {formattedCode.length > 0 ? (
+                formattedCode.map(part => (
+                  <span
+                    key={part}
+                    className="inline-flex min-w-[4.5ch] justify-center rounded-lg bg-muted px-2 py-1 tracking-[0.12em] md:px-3"
+                  >
+                    {part}
+                  </span>
+                ))
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
             </motion.div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch justify-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handleCopy}
-              className="gap-2"
+              className="gap-2 w-full sm:w-auto"
             >
               {copied ? (
                 <>
@@ -82,7 +93,7 @@ export function LinkCodeDisplay({
               size="sm"
               onClick={onRefresh}
               disabled={isRefreshing}
-              className="gap-2"
+              className="gap-2 w-full sm:w-auto"
             >
               <RefreshCw
                 className={cn('h-4 w-4', isRefreshing && 'animate-spin')}

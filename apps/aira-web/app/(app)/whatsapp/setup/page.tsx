@@ -83,12 +83,14 @@ function ActionButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'flex flex-1 items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 transition-colors hover:bg-primary/10',
+        'flex min-h-11 w-full flex-1 items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 transition-colors hover:bg-primary/10 sm:w-auto',
         disabled && 'cursor-not-allowed opacity-50',
       )}
     >
       {icon}
-      <span className="text-sm font-semibold text-primary">{label}</span>
+      <span className="whitespace-nowrap text-sm font-semibold text-primary">
+        {label}
+      </span>
     </motion.button>
   );
 }
@@ -164,8 +166,8 @@ export default function WhatsAppSetupPage() {
     }
   };
 
-  const code = linkCode ?? '';
-  const formattedCode = code ? `${code.slice(0, 4)} ${code.slice(4)}` : '';
+  const code = linkCode ?? ' ';
+  const formattedCode = code ? [code.slice(0, 4), code.slice(4)] : [];
 
   return (
     <ScreenLayout maxWidth="md" className="py-4 h-screen" padded={false}>
@@ -202,16 +204,23 @@ export default function WhatsAppSetupPage() {
             </p>
 
             {/* Code Display */}
-            <div className="mb-4 min-h-[48px]">
+            <div className="mb-4 min-h-[56px]">
               {linkCode ? (
-                <motion.p
+                <motion.div
                   key={linkCode}
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="font-mono text-4xl font-bold tracking-[0.2em] text-foreground"
+                  className="flex items-center justify-center gap-2 font-mono text-3xl font-bold text-foreground sm:gap-3 sm:text-4xl"
                 >
-                  {formattedCode}
-                </motion.p>
+                  {formattedCode.map(part => (
+                    <span
+                      key={part}
+                      className="inline-flex min-w-[4.5ch] justify-center rounded-lg bg-muted px-2 py-1 tracking-[0.12em] sm:px-3"
+                    >
+                      {part}
+                    </span>
+                  ))}
+                </motion.div>
               ) : (
                 <CodeLoadingShimmer />
               )}
@@ -242,7 +251,7 @@ export default function WhatsAppSetupPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="flex items-stretch border-y border-border bg-primary/5 px-6 py-4"
+            className="flex flex-col sm:flex-row items-stretch border-y border-border bg-primary/5 px-6 py-4"
           >
             <div className="flex-1">
               <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -254,7 +263,7 @@ export default function WhatsAppSetupPage() {
               </div>
             </div>
 
-            <div className="mx-4 w-px bg-border" />
+            <div className="hidden sm:block mx-4 w-px bg-border" />
 
             <div className="flex-1 text-right">
               <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -273,12 +282,12 @@ export default function WhatsAppSetupPage() {
           >
             <ActionButton
               onClick={handleCopy}
-              icon={
-                copied ? (
-                  <Check className="h-4 w-4 text-primary" />
-                ) : (
-                  <Copy className="h-4 w-4 text-primary" />
-                )
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 px-6 py-5"
+              >
               }
               label={copied ? 'Copied!' : 'Copy Code'}
               disabled={!linkCode}
@@ -291,9 +300,7 @@ export default function WhatsAppSetupPage() {
               icon={<RefreshCw className={cn('h-4 w-4 text-primary')} />}
               label="New Code"
             />
-          </motion.div>
-
-          {/* Tear Divider */}
+                <div className="hidden sm:block h-6 w-px bg-border" />
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
