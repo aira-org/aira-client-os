@@ -19,6 +19,7 @@ import {
   useDeleteSuggestion,
   type Suggestion,
 } from '@repo/core';
+import { formatAiraMessage } from '@/lib/message-format';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/lib/constants';
 
@@ -75,7 +76,7 @@ export default function HubPage() {
         id: task.task_id,
         type: 'message',
         title: task.task_description,
-        subtitle: task.task_message,
+        subtitle: formatAiraMessage(task.task_message),
         category: task.task_category.toLowerCase(),
         timestamp: formatRelativeTime(task.last_updated_at),
         recipient: task.whatsapp_chat_id || 'Unknown',

@@ -34,6 +34,92 @@ interface AudioAttachment {
 
 export type Attachment = ImageAttachment | AudioAttachment;
 
+// URL token detection and normalization for clickable links in subtitles
+const URL_TOKEN_REGEX =
+  /((?:https?:\/\/|https\/|http\/|www\.)[^\s]+|(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?)/g;
+
+function normalizeUrlToken(token: string): string {
+  const cleaned = token.trim().replace(/[),.!?]+$/, '');
+
+  if (/^https\//i.test(cleaned)) {
+    return cleaned.replace(/^https\//i, 'https://');
+  }
+
+  if (/^http\//i.test(cleaned)) {
+    return cleaned.replace(/^http\//i, 'http://');
+  }
+
+  if (/^https?:\/\//i.test(cleaned)) {
+    return cleaned;
+  }
+
+  return `https://${cleaned.replace(/^www\./i, 'www.')}`;
+}
+
+function renderSubtitleWithLinks(text: string): React.ReactNode {
+  const lines = text.split('\n');
+
+  return lines.map((line, lineIndex) => {
+    const matches = Array.from(line.matchAll(URL_TOKEN_REGEX));
+
+    if (matches.length === 0) {
+      return (
+        <React.Fragment key={`line-${lineIndex}`}>
+          {line}
+          {lineIndex < lines.length - 1 ? <br /> : null}
+        </React.Fragment>
+      );
+    }
+
+    const nodes: React.ReactNode[] = [];
+    let cursor = 0;
+
+    matches.forEach((match, matchIndex) => {
+      const token = match[0];
+      const start = match.index ?? 0;
+
+      if (start > cursor) {
+        nodes.push(
+          <React.Fragment key={`text-${lineIndex}-${matchIndex}`}>
+            {line.slice(cursor, start)}
+          </React.Fragment>,
+        );
+      }
+
+      const href = normalizeUrlToken(token);
+
+      nodes.push(
+        <a
+          key={`link-${lineIndex}-${matchIndex}`}
+          href={href}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="underline decoration-primary/60 underline-offset-2 text-primary hover:text-primary/80"
+        >
+          {token}
+        </a>,
+      );
+
+      cursor = start + token.length;
+    });
+
+    if (cursor < line.length) {
+      nodes.push(
+        <React.Fragment key={`tail-${lineIndex}`}>
+          {line.slice(cursor)}
+        </React.Fragment>,
+      );
+    }
+
+    return (
+      <React.Fragment key={`line-${lineIndex}`}>
+        {nodes}
+        {lineIndex < lines.length - 1 ? <br /> : null}
+      </React.Fragment>
+    );
+  });
+}
+
 interface SendMessageCardProps {
   id: string;
   title: string;
@@ -309,7 +395,9 @@ export function SendMessageCard({
       <div className="mb-2">
         <h3 className="text-base font-semibold text-foreground">{title}</h3>
         {subtitle && (
-          <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {renderSubtitleWithLinks(subtitle)}
+          </p>
         )}
       </div>
 
