@@ -321,20 +321,29 @@ export default function WhatsAppSetupPage() {
             </div>
           </motion.div>
 
-          {/* Legal Links */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
             className="flex items-center justify-center gap-2 pb-6 text-xs text-muted-foreground"
           >
-            <button className="underline hover:text-foreground">
+            <a
+              href="https://airaai.in/terms-of-use"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-foreground"
+            >
               Terms and Conditions
-            </button>
+            </a>
             <span>•</span>
-            <button className="underline hover:text-foreground">
+            <a
+              href="https://airaai.in/privacy-policy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-foreground"
+            >
               Privacy Policy
-            </button>
+            </a>
           </motion.div>
         </motion.div>
       </div>

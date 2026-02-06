@@ -90,23 +90,31 @@ export default function PhonePage() {
             </div>
           </div>
 
-          {/* Phone Input */}
-          <PhoneInput value={phone} onChange={setPhone} />
-
-          {/* Mobile Avatar */}
-          <div className="flex justify-center md:hidden">
-            <AssistantAvatar size="lg" />
-          </div>
-
-          {/* Continue Button */}
-          <Button
-            onClick={handleContinue}
-            disabled={!isValidPhone || isUpdating}
-            size="default"
-            className="w-full"
+          {/* Form wrapper to enable Enter key submission */}
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              handleContinue();
+            }}
           >
-            {isUpdating ? 'Verifying...' : 'Continue'}
-          </Button>
+            {/* Phone Input */}
+            <PhoneInput value={phone} onChange={setPhone} />
+
+            {/* Mobile Avatar */}
+            <div className="flex justify-center md:hidden mt-8">
+              <AssistantAvatar size="lg" />
+            </div>
+
+            {/* Continue Button */}
+            <Button
+              type="submit"
+              disabled={!isValidPhone || isUpdating}
+              size="default"
+              className="w-full mt-8"
+            >
+              {isUpdating ? 'Verifying...' : 'Continue'}
+            </Button>
+          </form>
 
           {/* Info text */}
           <p className="text-center text-xs text-muted-foreground">

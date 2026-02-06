@@ -33,7 +33,9 @@ export default function SignInPage() {
         className="space-y-8"
       >
         {/* Description */}
-        <div className="text-center"></div>
+        <p className="text-center text-muted-foreground">
+          Connect and automate with AiRA
+        </p>
 
         {/* OAuth Buttons */}
         <OAuthButtons

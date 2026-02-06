@@ -20,9 +20,9 @@ export function AuthGuard({ children, requireActive = true }: AuthGuardProps) {
     // Wait for auth state to load
     if (isLoading) return;
 
-    // Redirect to signin if not authenticated
+    // Redirect to onboarding if not authenticated
     if (!isAuthenticated) {
-      router.replace(ROUTES.SIGNIN);
+      router.replace(ROUTES.ONBOARDING);
       return;
     }
 
