@@ -1,0 +1,22 @@
+# Dependencies
+node_modules
+*/node_modules
+**/node_modules
+
+# Build artifacts
+.next
+dist
+build
+out
+.turbo
+
+# Environment and secrets
+.env*
+.git
+.github
+
+# Mobile build files (heavy and unnecessary for web build)
+apps/aira-app/android
+apps/aira-app/ios
+*.apk
+*.aab

@@ -1,0 +1,131 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Colors - from mobile app */
+  --color-background: #010101;
+  --color-foreground: #fefaf2;
+  --color-card: #1a1a1b;
+  --color-card-foreground: #fefaf2;
+  --color-popover: #1a1a1b;
+  --color-popover-foreground: #fefaf2;
+  --color-primary: #b6b09f;
+  --color-primary-foreground: #010101;
+  --color-secondary: #2a2a2b;
+  --color-secondary-foreground: #fefaf2;
+  --color-muted: #2a2a2b;
+  --color-muted-foreground: #8a8a8a;
+  --color-accent: #b6b09f;
+  --color-accent-foreground: #010101;
+  --color-destructive: #ff6b6b;
+  --color-destructive-foreground: #fefaf2;
+  --color-border: #2a2a2b;
+  --color-input: #2a2a2b;
+  --color-ring: #b6b09f;
+
+  /* Extended palette */
+  --color-success: #7ecf8e;
+  --color-warning: #ffa500;
+  --color-whatsapp: #25d366;
+  --color-email: #ea4335;
+  --color-calendar: #34a853;
+  --color-drive: #4285f4;
+
+  /* Opacity variants */
+  --color-primary-faint: rgba(182, 176, 159, 0.15);
+  --color-success-bg: rgba(126, 207, 142, 0.15);
+  --color-error-bg: rgba(255, 107, 107, 0.15);
+  --color-warning-bg: rgba(255, 165, 0, 0.15);
+  --color-backdrop: rgba(1, 1, 1, 0.5);
+
+  /* Border radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Fonts */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+/* Base styles */
+* {
+  border-color: var(--color-border);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted-foreground);
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}

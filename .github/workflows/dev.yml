@@ -1,0 +1,196 @@
+name: Aira FE (Dev)
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+concurrency:
+  group: aira-fe-pr-${{ github.event.pull_request.number || github.ref_name || github.workflow }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - dev
+
+env:
+  ACR_NAME: ${{ vars.ACR_NAME }}
+  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+  AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP_DEV }}
+  AZURE_WEBAPP_NAME: ${{ vars.AZURE_WEBAPP_NAME_DEV }}
+  IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+  NODE_VERSION: ${{ vars.NODE_VERSION }}
+
+jobs:
+  ci_checks:
+    if: github.event.action != 'closed'
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm tsc
+      - run: pnpm lint
+      - run: pnpm prettier --check "**/*.{ts,tsx,md}"
+
+  deploy_preview:
+    needs: ci_checks
+    if: |
+      github.event.action == 'opened' ||
+      github.event.action == 'synchronize' ||
+      github.event.action == 'reopened'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push preview image
+        run: |
+          az acr build \
+            --registry "${{ env.ACR_NAME }}" \
+            --resource-group common \
+            --image "${{ env.IMAGE_NAME }}:pr-${{ github.event.pull_request.number }}" \
+            .
+
+      - name: Ensure preview slot exists
+        run: |
+          SLOT="pr-${{ github.event.pull_request.number }}"
+          az webapp deployment slot show \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+            --slot "$SLOT" >/dev/null 2>&1 || \
+          az webapp deployment slot create \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+            --slot "$SLOT" \
+            --configuration-source "${{ env.AZURE_WEBAPP_NAME }}"
+
+      - name: Assign managed identity to slot
+        run: |
+          SLOT="pr-${{ github.event.pull_request.number }}"
+          IDENTITY="${{ secrets.AZURE_USER_IDENTITY_ID_DEV }}"
+
+          EXISTING=$(az webapp identity show \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+            --slot "$SLOT" \
+            --query "userAssignedIdentities" -o json)
+
+          if ! echo "$EXISTING" | grep -iq "$IDENTITY"; then
+            az webapp identity assign \
+              --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+              --name "${{ env.AZURE_WEBAPP_NAME }}" \
+              --slot "$SLOT" \
+              --identities "$IDENTITY"
+            sleep 15
+          fi
+
+          az webapp config appsettings set \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+            --slot "$SLOT" \
+            --settings AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID_DEV }}"
+
+      - name: Configure slot container
+        run: |
+          SLOT="pr-${{ github.event.pull_request.number }}"
+          IMAGE="${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.pull_request.number }}"
+
+          az webapp update \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+            --slot "$SLOT" \
+            --set siteConfig.acrUseManagedIdentityCreds=true
+
+          az webapp config container set \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+            --slot "$SLOT" \
+            --container-image-name "$IMAGE" \
+            --container-registry-url "https://${{ env.ACR_LOGIN_SERVER }}" \
+            --enable-app-service-storage true
+
+          az webapp restart \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+            --slot "$SLOT"
+
+  cleanup_preview:
+    if: github.event.action == 'closed' && github.event.pull_request.merged == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - run: |
+          SLOT="pr-${{ github.event.pull_request.number }}"
+          az webapp deployment slot delete \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+            --slot "$SLOT" || true
+
+      - run: |
+          TAG="pr-${{ github.event.pull_request.number }}"
+          az acr repository delete \
+            --name "${{ env.ACR_NAME }}" \
+            --resource-group common \
+            --image "${{ env.IMAGE_NAME }}:$TAG" \
+            --yes || true
+
+  deploy_to_dev:
+    if: |
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      github.base_ref == 'dev'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - run: az acr login -n "${{ env.ACR_NAME }}"
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
+
+      - run: |
+          IMAGE="${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+
+          az webapp config container set \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+            --container-image-name "$IMAGE" \
+            --container-registry-url "https://${{ env.ACR_LOGIN_SERVER }}" \
+            --enable-app-service-storage true
+
+          az webapp restart \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ env.AZURE_WEBAPP_NAME }}"

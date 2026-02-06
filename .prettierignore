@@ -1,0 +1,38 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+dist
+build
+.next
+out
+*.tsbuildinfo
+
+# Auto-generated files
+next-env.d.ts
+*.generated.*
+
+# iOS
+ios/Pods
+ios/build
+*.xcworkspace
+*.xcodeproj
+
+# Android
+android/.gradle
+android/build
+android/app/build
+*.apk
+*.aab
+
+# Logs
+*.log
+
+# Misc
+.DS_Store
+*.pem
+.env*.local
+coverage
+.turbo
