@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useIsAuthenticated, useIsAuthLoading, useUser } from '@repo/core';
 import { ROUTES } from '@/lib/constants';
+
+const ONBOARDING_KEY = 'aira_has_onboarded';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -15,6 +17,7 @@ export function AuthGuard({ children, requireActive = true }: AuthGuardProps) {
   const isAuthenticated = useIsAuthenticated();
   const isLoading = useIsAuthLoading();
   const { data: user, isLoading: isUserLoading } = useUser();
+  const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
 
   useEffect(() => {
     // Wait for auth state to load
@@ -22,7 +25,17 @@ export function AuthGuard({ children, requireActive = true }: AuthGuardProps) {
 
     // Redirect to signin if not authenticated
     if (!isAuthenticated) {
-      router.replace(ROUTES.SIGNIN);
+      // Check if user has completed onboarding
+      const hasOnboarded = localStorage.getItem(ONBOARDING_KEY) === 'true';
+      setHasCheckedOnboarding(true);
+
+      if (!hasOnboarded) {
+        // First-time visitor - show onboarding
+        router.replace(ROUTES.ONBOARDING);
+      } else {
+        // Already onboarded - go to signin
+        router.replace(ROUTES.SIGNIN);
+      }
       return;
     }
 
