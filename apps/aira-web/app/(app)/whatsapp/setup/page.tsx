@@ -3,9 +3,15 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Copy, RefreshCw, Check, Info } from 'lucide-react';
+import { Copy, RefreshCw, Check, Info, QrCode, KeyRound } from 'lucide-react';
 import { ScreenLayout } from '@/components/layout';
-import { HowToLinkDialog, SyncingAssistantAvatar } from '@/components/whatsapp';
+import {
+  HowToLinkDialog,
+  SyncingAssistantAvatar,
+  QRCodeDisplay,
+  CountdownTimer,
+  ConnectionStatusIndicator,
+} from '@/components/whatsapp';
 import { cn } from '@/lib/utils';
 import { ROUTES, SPRING_CONFIG } from '@/lib/constants';
 import {
@@ -93,14 +99,82 @@ function ActionButton({
   );
 }
 
+// Error Display Component
+function ErrorDisplay({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-xl border border-destructive/20 bg-destructive/10 p-6"
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/20">
+          <motion.svg
+            className="h-5 w-5 text-destructive"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </motion.svg>
+        </div>
+        <div className="flex-1">
+          <h4 className="font-semibold text-destructive">Connection Failed</h4>
+          <p className="mt-1 text-sm text-destructive/80">{message}</p>
+          <div className="mt-4 flex gap-2">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onRetry}
+              className="flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-destructive/90"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Try Again
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() =>
+                window.open(
+                  'https://support.example.com/whatsapp-connection',
+                  '_blank',
+                )
+              }
+              className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Get Help
+            </motion.button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function WhatsAppSetupPage() {
   const router = useRouter();
   const [showHowTo, setShowHowTo] = React.useState(false);
   const [copied, setCopied] = useState(false);
+  const [linkMethod, setLinkMethod] = useState<'qr' | 'code'>('qr');
+  const [codeCreatedAt, setCodeCreatedAt] = useState<number>(Date.now());
+  const [autoRefreshCount, setAutoRefreshCount] = useState(0);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const hasCalledConnect = useRef(false);
 
   // Connect mutation
-  const { mutate: connect } = useWahaConnect();
+  const { mutate: connect, isPending: isConnecting, error: connectError } =
+    useWahaConnect();
 
   // Get link code from store (set by connect mutation)
   const linkCode = useWahaLinkCode();
@@ -109,7 +183,7 @@ export default function WhatsAppSetupPage() {
 
   const { showToast } = useToast();
 
-  const { reset } = useWahaLinkPolling({
+  const { status: pollingStatus, error: pollingError, reset } = useWahaLinkPolling({
     onSyncStart: () => {
       showToast(
         'Sync started! Let AiRA do the heavy lifting, sit back and relax.',
@@ -126,19 +200,60 @@ export default function WhatsAppSetupPage() {
     },
   });
 
-  const handleConnectError = useCallback(() => {
-    showToast('Max limit reached! Please try again later.', 'error');
-    router.back();
-  }, [showToast, router]);
+  const handleConnectError = useCallback(
+    (error: Error) => {
+      const errorMessage =
+        error.message || 'Failed to connect. Please try again.';
+
+      // Check for specific error types
+      if (errorMessage.includes('limit') || errorMessage.includes('max')) {
+        setConnectionError(
+          'Connection limit reached. Please wait a few minutes and try again.',
+        );
+      } else if (errorMessage.includes('network')) {
+        setConnectionError(
+          'Network error. Please check your internet connection and try again.',
+        );
+      } else {
+        setConnectionError(
+          'Failed to generate linking code. Please try again or contact support.',
+        );
+      }
+
+      showToast(errorMessage, 'error');
+    },
+    [showToast],
+  );
+
+  const handleConnect = useCallback(
+    (isAutoRefresh = false) => {
+      setConnectionError(null); // Clear previous errors
+      connect(undefined, {
+        onSuccess: () => {
+          setCodeCreatedAt(Date.now());
+          setConnectionError(null);
+          if (isAutoRefresh) {
+            setAutoRefreshCount(prev => prev + 1);
+          }
+        },
+        onError: handleConnectError,
+      });
+    },
+    [connect, handleConnectError],
+  );
+
+  const handleRetry = () => {
+    setConnectionError(null);
+    setAutoRefreshCount(0);
+    handleConnect();
+  };
 
   useEffect(() => {
     if (!hasCalledConnect.current && !linkCode && !isWahaConnected) {
       hasCalledConnect.current = true;
-      connect(undefined, {
-        onError: handleConnectError,
-      });
+      handleConnect();
     }
-  }, [connect, linkCode, isWahaConnected, handleConnectError]);
+  }, [handleConnect, linkCode, isWahaConnected]);
 
   useEffect(() => {
     if (isWahaConnected) {
@@ -148,31 +263,69 @@ export default function WhatsAppSetupPage() {
 
   const handleRefresh = () => {
     reset();
-    connect(undefined, {
-      onError: handleConnectError,
-    });
+    handleConnect();
   };
+
+  // Auto-refresh on code expiry (with limit to prevent infinite loops)
+  const handleCodeExpiry = useCallback(() => {
+    if (autoRefreshCount < 3) {
+      // Max 3 auto-refreshes
+      showToast('Code expired - getting a new one...', 'info');
+      handleConnect(true);
+    } else {
+      showToast(
+        'Code expired multiple times. Please check your connection.',
+        'error',
+      );
+    }
+  }, [autoRefreshCount, handleConnect, showToast]);
+
+  const handleWarning = useCallback(
+    (secondsLeft: number) => {
+      if (secondsLeft === 60) {
+        showToast('Code expires in 1 minute', 'info');
+      }
+    },
+    [showToast],
+  );
 
   const handleCopy = async () => {
     if (!linkCode) return;
     try {
       await navigator.clipboard.writeText(linkCode);
       setCopied(true);
+      showToast('Code copied to clipboard!', 'success');
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
+      showToast('Failed to copy code', 'error');
     }
+  };
+
+  const handleShare = () => {
+    showToast('QR code shared successfully!', 'success');
   };
 
   const code = linkCode ?? '';
   const formattedCode = code ? `${code.slice(0, 4)} ${code.slice(4)}` : '';
+  const expiryTimeMs = codeCreatedAt + 5 * 60 * 1000; // 5 minutes from creation
+
+  // Map polling status to connection status
+  const getConnectionStatus = () => {
+    if (pollingStatus === 'syncing') return 'syncing';
+    if (pollingStatus === 'polling') return 'polling';
+    if (pollingStatus === 'error') return 'error';
+    if (isConnecting) return 'checking';
+    return 'idle';
+  };
 
   return (
     <ScreenLayout maxWidth="md" className="py-4 h-screen" padded={false}>
-      <div className="px-4  flex flex-col h-full">
+      <div className="px-4 flex flex-col h-full">
         {/* Header */}
         <Header title={'WhatsApp'} align={'left'} close={true} />
-        {/* Boarding Pass Card */}
+
+        {/* Main Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -190,114 +343,177 @@ export default function WhatsAppSetupPage() {
             <Info className="h-5 w-5" />
           </motion.button>
 
-          {/* Code Section */}
+          {/* Method Tabs */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="flex flex-col items-center px-6 pb-6 pt-8"
+            className="flex gap-2 px-6 pt-6"
           >
-            <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Your Linking Code
-            </p>
-
-            {/* Code Display */}
-            <div className="mb-4 min-h-[48px]">
-              {linkCode ? (
-                <motion.p
-                  key={linkCode}
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="font-mono text-4xl font-bold tracking-[0.2em] text-foreground"
-                >
-                  {formattedCode}
-                </motion.p>
-              ) : (
-                <CodeLoadingShimmer />
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setLinkMethod('qr')}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 transition-all',
+                linkMethod === 'qr'
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-background text-muted-foreground hover:bg-accent',
               )}
-            </div>
+            >
+              <QrCode className="h-4 w-4" />
+              <span className="text-sm font-semibold">QR Code</span>
+            </motion.button>
 
-            {/* Expiry Indicator */}
-            <div className="flex items-center gap-2">
-              <motion.div
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.7, 1, 0.7],
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
-                className="h-1.5 w-1.5 rounded-full bg-primary"
-              />
-              <p className="text-xs text-muted-foreground">
-                Code expires in 5 minutes
-              </p>
-            </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setLinkMethod('code')}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 transition-all',
+                linkMethod === 'code'
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-background text-muted-foreground hover:bg-accent',
+              )}
+            >
+              <KeyRound className="h-4 w-4" />
+              <span className="text-sm font-semibold">Manual Code</span>
+            </motion.button>
           </motion.div>
 
-          {/* Details Grid */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="flex items-stretch border-y border-border bg-primary/5 px-6 py-4"
-          >
-            <div className="flex-1">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Connection
-              </p>
-              <div className="flex items-center gap-2">
-                <WhatsAppLogo className="h-5 w-5" />
-                <span className="font-semibold text-foreground">WhatsApp</span>
-              </div>
-            </div>
+          {/* Error Display */}
+          {connectionError && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="px-6 pt-6"
+            >
+              <ErrorDisplay message={connectionError} onRetry={handleRetry} />
+            </motion.div>
+          )}
 
-            <div className="mx-4 w-px bg-border" />
+          {/* Countdown Timer */}
+          {!connectionError && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="flex justify-center px-6 pt-4"
+            >
+              {linkCode && (
+                <CountdownTimer
+                  expiryTimeMs={expiryTimeMs}
+                  onExpiry={handleCodeExpiry}
+                  onWarning={handleWarning}
+                />
+              )}
+            </motion.div>
+          )}
 
-            <div className="flex-1 text-right">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Status
-              </p>
-              <span className="font-semibold text-foreground">Linking</span>
-            </div>
-          </motion.div>
-
-          {/* Actions Row */}
+          {/* Content Section */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="flex items-center gap-3 px-6 py-5"
+            className="flex flex-col items-center px-6 pb-6 pt-4"
           >
-            <ActionButton
-              onClick={handleCopy}
-              icon={
-                copied ? (
-                  <Check className="h-4 w-4 text-primary" />
-                ) : (
-                  <Copy className="h-4 w-4 text-primary" />
-                )
-              }
-              label={copied ? 'Copied!' : 'Copy Code'}
-              disabled={!linkCode}
-            />
-
-            <div className="h-6 w-px bg-border" />
-
-            <ActionButton
-              onClick={handleRefresh}
-              icon={<RefreshCw className={cn('h-4 w-4 text-primary')} />}
-              label="New Code"
-            />
+            {linkMethod === 'qr' ? (
+              // QR Code Display
+              linkCode ? (
+                <QRCodeDisplay
+                  code={linkCode}
+                  className="py-4"
+                  onShare={handleShare}
+                />
+              ) : (
+                <CodeLoadingShimmer />
+              )
+            ) : (
+              // Manual Code Display
+              <>
+                <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  Your Linking Code
+                </p>
+                <div className="mb-4 min-h-[48px]">
+                  {linkCode ? (
+                    <motion.p
+                      key={linkCode}
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="font-mono text-4xl font-bold tracking-[0.2em] text-foreground"
+                    >
+                      {formattedCode}
+                    </motion.p>
+                  ) : (
+                    <CodeLoadingShimmer />
+                  )}
+                </div>
+              </>
+            )}
           </motion.div>
+
+          {/* Connection Status */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="flex items-center justify-center border-y border-border bg-primary/5 px-6 py-4"
+          >
+            <ConnectionStatusIndicator status={getConnectionStatus()} />
+          </motion.div>
+
+          {/* Actions Row */}
+          {linkMethod === 'code' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="flex items-center gap-3 px-6 py-5"
+            >
+              <ActionButton
+                onClick={handleCopy}
+                icon={
+                  copied ? (
+                    <Check className="h-4 w-4 text-primary" />
+                  ) : (
+                    <Copy className="h-4 w-4 text-primary" />
+                  )
+                }
+                label={copied ? 'Copied!' : 'Copy Code'}
+                disabled={!linkCode}
+              />
+
+              <div className="h-6 w-px bg-border" />
+
+              <ActionButton
+                onClick={handleRefresh}
+                icon={<RefreshCw className={cn('h-4 w-4 text-primary')} />}
+                label="New Code"
+              />
+            </motion.div>
+          )}
+
+          {linkMethod === 'qr' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="flex items-center justify-center px-6 py-5"
+            >
+              <ActionButton
+                onClick={handleRefresh}
+                icon={<RefreshCw className={cn('h-4 w-4 text-primary')} />}
+                label="Generate New Code"
+              />
+            </motion.div>
+          )}
 
           {/* Tear Divider */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.7 }}
             className="mx-4"
           >
             <div className="border-t border-dashed border-border" />
@@ -307,16 +523,18 @@ export default function WhatsAppSetupPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.8 }}
             className="flex flex-col flex-1 justify-center items-center gap-4 px-6 py-8"
           >
             <SyncingAssistantAvatar size={80} />
             <div className="text-center">
               <h3 className="font-semibold text-foreground">
-                Syncing with WhatsApp
+                Waiting for Connection
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Enter the code in WhatsApp to complete linking
+                {linkMethod === 'qr'
+                  ? 'Scan the QR code with WhatsApp to link'
+                  : 'Enter the code in WhatsApp to complete linking'}
               </p>
             </div>
           </motion.div>
@@ -325,7 +543,7 @@ export default function WhatsAppSetupPage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
+            transition={{ delay: 0.9 }}
             className="flex items-center justify-center gap-2 pb-6 text-xs text-muted-foreground"
           >
             <button className="underline hover:text-foreground">

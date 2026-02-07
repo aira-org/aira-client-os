@@ -23,7 +23,25 @@ interface HowToLinkDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const steps = [
+const qrSteps = [
+  {
+    icon: Settings,
+    title: 'Open WhatsApp Settings',
+    description: 'Go to Settings > Linked Devices on your phone',
+  },
+  {
+    icon: Link2,
+    title: 'Tap "Link a Device"',
+    description: 'Select the option to link a new device',
+  },
+  {
+    icon: Phone,
+    title: 'Scan QR Code',
+    description: 'Point your phone camera at the QR code shown on screen',
+  },
+];
+
+const codeSteps = [
   {
     icon: Settings,
     title: 'Open WhatsApp Settings',
@@ -37,12 +55,15 @@ const steps = [
   {
     icon: Phone,
     title: 'Use Phone Number',
-    description: 'Choose "Link with phone number instead" and enter the code',
+    description: 'Choose "Link with phone number instead" and enter the code shown',
   },
 ];
 
 export function HowToLinkDialog({ open, onOpenChange }: HowToLinkDialogProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [linkMethod, setLinkMethod] = useState<'qr' | 'code'>('qr');
+
+  const steps = linkMethod === 'qr' ? qrSteps : codeSteps;
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -68,6 +89,38 @@ export function HowToLinkDialog({ open, onOpenChange }: HowToLinkDialogProps) {
         <SheetHeader>
           <SheetTitle className="text-center">How to Link WhatsApp</SheetTitle>
         </SheetHeader>
+
+        {/* Method Toggle */}
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={() => {
+              setLinkMethod('qr');
+              setCurrentStep(0);
+            }}
+            className={cn(
+              'flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+              linkMethod === 'qr'
+                ? 'border-whatsapp bg-whatsapp/10 text-whatsapp'
+                : 'border-border bg-background text-muted-foreground hover:bg-accent',
+            )}
+          >
+            QR Code
+          </button>
+          <button
+            onClick={() => {
+              setLinkMethod('code');
+              setCurrentStep(0);
+            }}
+            className={cn(
+              'flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+              linkMethod === 'code'
+                ? 'border-whatsapp bg-whatsapp/10 text-whatsapp'
+                : 'border-border bg-background text-muted-foreground hover:bg-accent',
+            )}
+          >
+            Manual Code
+          </button>
+        </div>
 
         <div className="py-6">
           <AnimatePresence mode="wait">
