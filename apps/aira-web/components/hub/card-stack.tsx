@@ -9,17 +9,16 @@ import {
   useAnimation,
   type PanInfo,
 } from 'framer-motion';
-import { Inbox } from 'lucide-react';
+import { Inbox, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { SendMessageCard, type Attachment } from './send-message-card';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SPRING_CONFIG } from '@/lib/constants';
 
-// Swipe configuration
 const SWIPE_THRESHOLD = 150;
 const SWIPE_VELOCITY_THRESHOLD = 500;
 
-// Card data types matching mobile app
 export interface BaseCardData {
   id: string;
   type: 'message' | 'approve' | 'file' | 'image';
@@ -46,6 +45,7 @@ interface CardStackProps {
     attachments: Attachment[],
   ) => void;
   onDismiss?: (id: string, direction: number) => void;
+  onGoToWorkspace?: () => void;
   className?: string;
   isFiltered?: boolean;
   activeCategory?: string;
@@ -53,24 +53,24 @@ interface CardStackProps {
   onCategoryPress?: (categoryId: string) => void;
 }
 
-// Priority colors
 const priorityColors = {
   high: 'bg-destructive',
   medium: 'bg-primary',
   low: 'bg-emerald-500',
 };
 
-// Empty state component
 function EmptyState({
   isFiltered = false,
   activeCategory,
   otherCategoryTasks = [],
   onCategoryPress,
+  onGoToWorkspace,
 }: {
   isFiltered?: boolean;
   activeCategory?: string;
   otherCategoryTasks?: { id: string; label: string; count: number }[];
   onCategoryPress?: (categoryId: string) => void;
+  onGoToWorkspace?: () => void;
 }) {
   const totalOtherTasks = otherCategoryTasks.reduce(
     (sum, cat) => sum + cat.count,
@@ -112,7 +112,12 @@ function EmptyState({
         transition={{ type: 'spring', damping: 18, stiffness: 150 }}
         className="mb-4 rounded-2xl bg-card p-6"
       >
-        <Inbox className="h-12 w-12 text-muted-foreground" />
+        <motion.div
+          animate={{ y: [0, -4, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <Inbox className="h-12 w-12 text-muted-foreground" />
+        </motion.div>
       </motion.div>
       <motion.h3
         initial={{ opacity: 0, y: 10 }}
@@ -131,7 +136,25 @@ function EmptyState({
         {subtitle}
       </motion.p>
 
-      {/* Category chips for filtered empty state */}
+      {!isFiltered && onGoToWorkspace && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-6"
+        >
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onGoToWorkspace}
+            className="rounded-full gap-2"
+          >
+            Go to Workspace
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+        </motion.div>
+      )}
+
       {isFiltered && totalOtherTasks > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 15 }}
@@ -164,7 +187,6 @@ function EmptyState({
   );
 }
 
-// Stacked card wrapper
 interface StackedCardProps {
   index: number;
   isTopCard: boolean;
@@ -187,11 +209,9 @@ function StackedCard({
   const opacity = isTopCard ? 1 : 1 - index * 0.15;
   const zIndex = 10 - index;
 
-  // Animation controls for programmatic animation
   const controls = useAnimation();
   const [isDismissing, setIsDismissing] = useState(false);
 
-  // Motion values for drag
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-300, 0, 300], [-15, 0, 15]);
   const dragOpacity = useTransform(
@@ -210,7 +230,6 @@ function StackedCard({
         const direction = info.offset.x > 0 ? 1 : -1;
         setIsDismissing(true);
 
-        // Animate card off-screen
         await controls.start({
           x: direction * 500,
           opacity: 0,
@@ -220,7 +239,6 @@ function StackedCard({
 
         onDismiss(direction);
       } else {
-        // Spring back to center
         controls.start({
           x: 0,
           transition: { type: 'spring', damping: 20, stiffness: 300 },
@@ -263,7 +281,6 @@ function StackedCard({
       )}
     >
       <Card className="relative h-full w-full overflow-hidden">
-        {/* Priority indicator */}
         {priority && (
           <div
             className={cn(
@@ -277,7 +294,6 @@ function StackedCard({
           {children}
         </CardContent>
 
-        {/* Disabled overlay for non-top cards */}
         {!isTopCard && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -295,16 +311,15 @@ export function CardStack({
   cards,
   onSendMessage,
   onDismiss,
+  onGoToWorkspace,
   className,
   isFiltered = false,
   activeCategory,
   otherCategoryTasks = [],
   onCategoryPress,
 }: CardStackProps) {
-  // Only show top 3 cards for visual stack
   const visibleCards = useMemo(() => cards.slice(0, 3), [cards]);
 
-  // Handle swipe dismiss
   const handleSwipeDismiss = useCallback(
     (cardId: string, direction: number) => {
       onDismiss?.(cardId, direction);
@@ -319,16 +334,15 @@ export function CardStack({
         activeCategory={activeCategory}
         otherCategoryTasks={otherCategoryTasks}
         onCategoryPress={onCategoryPress}
+        onGoToWorkspace={onGoToWorkspace}
       />
     );
   }
 
-  // Render cards in reverse order so top card is rendered last (on top)
   const cardElements = visibleCards
     .map((card, index) => {
       const isTopCard = index === 0;
 
-      // Handle message card type
       if (card.type === 'message') {
         return (
           <StackedCard
@@ -353,7 +367,6 @@ export function CardStack({
         );
       }
 
-      // Default card type (approve, file, image, etc.) - fallback
       return (
         <StackedCard
           key={card.id}
@@ -383,18 +396,40 @@ export function CardStack({
     })
     .reverse();
 
-  // Calculate container height based on card stack - use flex-1 to fill available space
   const stackOffset = (Math.min(visibleCards.length, 3) - 1) * 8;
 
   return (
-    <div
-      className={cn(
-        'relative w-full flex-1 min-h-[400px] overflow-y-hidden overflow-x-hidden',
-        className,
+    <div className={cn('relative w-full', className)}>
+      {cards.length > 1 && (
+        <motion.div
+          key={cards.length}
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="absolute -top-3 right-4 z-30 flex h-7 min-w-7 items-center justify-center rounded-full bg-primary px-2.5"
+        >
+          <span className="text-[11px] font-bold text-primary-foreground">
+            {cards.length}
+          </span>
+        </motion.div>
       )}
-      style={{ paddingBottom: stackOffset }}
-    >
-      <AnimatePresence mode="popLayout">{cardElements}</AnimatePresence>
+
+      <div
+        className="relative w-full min-h-100 overflow-y-hidden overflow-x-hidden"
+        style={{ paddingBottom: stackOffset }}
+      >
+        <AnimatePresence mode="popLayout">{cardElements}</AnimatePresence>
+      </div>
+
+      {cards.length > 1 && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="mt-3 text-center text-[11px] text-muted-foreground/50 tracking-wide"
+        >
+          swipe to dismiss
+        </motion.p>
+      )}
     </div>
   );
 }

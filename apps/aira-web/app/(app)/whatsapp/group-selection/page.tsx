@@ -166,7 +166,7 @@ function AnimatedCheckbox({ checked }: { checked: boolean }) {
   return (
     <motion.div
       className={cn(
-        'flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md border-2 transition-colors',
+        'flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-md border-2 transition-colors',
         checked ? 'border-primary bg-primary' : 'border-border bg-transparent',
       )}
       initial={false}
@@ -520,7 +520,7 @@ export default function WhatsAppGroupSelectionPage() {
             <Button
               onClick={() => syncChats.mutate()}
               disabled={syncChats.isPending}
-              className="gap-2 min-w-[140px]"
+              className="gap-2 min-w-35"
             >
               <RefreshCw
                 className={cn('h-4 w-4', syncChats.isPending && 'animate-spin')}
@@ -530,7 +530,7 @@ export default function WhatsAppGroupSelectionPage() {
             <Button
               onClick={() => router.push(ROUTES.HUB)}
               variant="outline"
-              className="min-w-[140px]"
+              className="min-w-35"
             >
               Go to Hub
             </Button>

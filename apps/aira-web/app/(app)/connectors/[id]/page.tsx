@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -17,93 +17,159 @@ import Link from 'next/link';
 import { ScreenLayout } from '@/components/layout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { RuleItem } from '@/components/workspace';
+import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/lib/constants';
+import { useRules, useUpdateRule, type Rule } from '@repo/core';
 
 const connectorConfig: Record<
   string,
-  { name: string; icon: typeof MessageCircle; color: string }
+  {
+    name: string;
+    icon: typeof MessageCircle;
+    color: string;
+    keywords: string[];
+  }
 > = {
-  whatsapp: { name: 'WhatsApp', icon: MessageCircle, color: 'text-whatsapp' },
-  email: { name: 'Email', icon: Mail, color: 'text-email' },
-  calendar: { name: 'Calendar', icon: Calendar, color: 'text-calendar' },
-  drive: { name: 'Drive', icon: HardDrive, color: 'text-drive' },
+  whatsapp: {
+    name: 'WhatsApp',
+    icon: MessageCircle,
+    color: 'text-whatsapp',
+    keywords: ['whatsapp', 'group', 'chat', 'message'],
+  },
+  email: {
+    name: 'Email',
+    icon: Mail,
+    color: 'text-email',
+    keywords: ['email', 'mail', 'send', 'inbox'],
+  },
+  calendar: {
+    name: 'Calendar',
+    icon: Calendar,
+    color: 'text-calendar',
+    keywords: [
+      'calendar',
+      'event',
+      'meeting',
+      'schedule',
+      'appointment',
+      'reminder',
+    ],
+  },
+  drive: {
+    name: 'Drive',
+    icon: HardDrive,
+    color: 'text-drive',
+    keywords: ['drive', 'file', 'document', 'folder', 'upload', 'download'],
+  },
 };
 
-// Mock rules by connector type
-const MOCK_RULES: Record<
-  string,
-  Array<{
-    id: string;
-    title: string;
-    description: string;
-    connectorType: 'whatsapp' | 'email' | 'calendar' | 'drive';
-    isEnabled: boolean;
-  }>
-> = {
-  whatsapp: [
-    {
-      id: '1',
-      title: 'Auto-reply to urgent messages',
-      description: 'Send automatic responses when someone mentions "urgent"',
-      connectorType: 'whatsapp',
-      isEnabled: true,
-    },
-    {
-      id: '2',
-      title: 'Forward important messages',
-      description: 'Forward messages from VIP contacts to email',
-      connectorType: 'whatsapp',
-      isEnabled: true,
-    },
-  ],
-  email: [
-    {
-      id: '3',
-      title: 'Forward receipts to accounting',
-      description: 'Auto-forward emails with "receipt" in subject',
-      connectorType: 'email',
-      isEnabled: true,
-    },
-  ],
-  calendar: [
-    {
-      id: '4',
-      title: 'Meeting summary to WhatsApp',
-      description: 'Send meeting summaries to relevant WhatsApp groups',
-      connectorType: 'calendar',
-      isEnabled: false,
-    },
-  ],
-  drive: [],
-};
+function ruleMatchesConnector(rule: Rule, connectorId: string): boolean {
+  if (connectorId === 'whatsapp') return true;
+  const config = connectorConfig[connectorId];
+  if (!config) return false;
+  const text = rule.raw_text.toLowerCase();
+  return config.keywords.some(kw => text.includes(kw));
+}
+
+function getConnectorTypeForRule(
+  rule: Rule,
+): 'whatsapp' | 'email' | 'calendar' | 'drive' {
+  const text = rule.raw_text.toLowerCase();
+  for (const [id, config] of Object.entries(connectorConfig)) {
+    if (id === 'whatsapp') continue;
+    if (config.keywords.some(kw => text.includes(kw))) {
+      return id as 'email' | 'calendar' | 'drive';
+    }
+  }
+  return 'whatsapp';
+}
+
+function RulesListSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-5 w-5" />
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-12 w-12 rounded-xl" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          </div>
+        </div>
+        <Skeleton className="h-10 w-28 rounded-lg" />
+      </div>
+      <Skeleton className="h-10 w-full rounded-lg" />
+      <div className="space-y-3">
+        {[1, 2, 3].map(i => (
+          <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function ConnectorRulesPage() {
   const router = useRouter();
   const params = useParams();
   const connectorId = params.id as string;
   const [searchQuery, setSearchQuery] = useState('');
+  const { showToast } = useToast();
 
   const config = connectorConfig[connectorId] || connectorConfig.whatsapp;
   const Icon = config.icon;
-  const connectorRules = MOCK_RULES[connectorId] || [];
 
-  const [rules, setRules] = useState(connectorRules);
+  const { data: allRules, isLoading, refetch } = useRules();
+  const { mutate: updateRule } = useUpdateRule();
 
-  const filteredRules = rules.filter(
-    rule =>
-      rule.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rule.description.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const connectorRules = useMemo(() => {
+    if (!allRules) return [];
+    return allRules.filter(rule => ruleMatchesConnector(rule, connectorId));
+  }, [allRules, connectorId]);
 
-  const handleRuleToggle = (id: string, enabled: boolean) => {
-    setRules(prev =>
-      prev.map(rule =>
-        rule.id === id ? { ...rule, isEnabled: enabled } : rule,
-      ),
+  const filteredRules = useMemo(() => {
+    if (!searchQuery.trim()) return connectorRules;
+    const q = searchQuery.trim().toLowerCase();
+    return connectorRules.filter(rule =>
+      rule.raw_text.toLowerCase().includes(q),
+    );
+  }, [connectorRules, searchQuery]);
+
+  const handleRuleToggle = (rule: Rule) => {
+    const newStatus = rule.status === 'active' ? 'inactive' : 'active';
+    updateRule(
+      {
+        rule_id: rule.rule_id,
+        w_id: rule.w_id,
+        raw_text: rule.raw_text,
+        status: newStatus,
+      },
+      {
+        onSuccess: () => {
+          showToast(
+            `Rule ${newStatus === 'active' ? 'enabled' : 'disabled'}`,
+            'success',
+          );
+          refetch();
+        },
+        onError: () => {
+          showToast('Failed to update rule', 'error');
+        },
+      },
     );
   };
+
+  if (isLoading) {
+    return (
+      <ScreenLayout maxWidth="xl" className="py-6">
+        <RulesListSkeleton />
+      </ScreenLayout>
+    );
+  }
 
   return (
     <ScreenLayout maxWidth="xl" className="py-6">
@@ -112,7 +178,6 @@ export default function ConnectorRulesPage() {
         animate={{ opacity: 1 }}
         className="space-y-6"
       >
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
@@ -125,7 +190,6 @@ export default function ConnectorRulesPage() {
               <div
                 className={cn(
                   'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl',
-                  `bg-${connectorId}/20`,
                 )}
                 style={{
                   backgroundColor: `color-mix(in srgb, var(--color-${connectorId}) 20%, transparent)`,
@@ -144,7 +208,8 @@ export default function ConnectorRulesPage() {
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {rules.length} rule{rules.length !== 1 ? 's' : ''} configured
+                  {connectorRules.length} rule
+                  {connectorRules.length !== 1 ? 's' : ''} configured
                 </p>
               </div>
             </div>
@@ -158,7 +223,6 @@ export default function ConnectorRulesPage() {
           </Link>
         </div>
 
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -170,24 +234,26 @@ export default function ConnectorRulesPage() {
           />
         </div>
 
-        {/* Rules List */}
         {filteredRules.length > 0 ? (
           <div className="space-y-3">
             {filteredRules.map((rule, index) => (
               <motion.div
-                key={rule.id}
+                key={rule.rule_id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
                 <RuleItem
-                  id={rule.id}
-                  title={rule.title}
-                  description={rule.description}
-                  connectorType={rule.connectorType}
-                  isEnabled={rule.isEnabled}
-                  onToggle={enabled => handleRuleToggle(rule.id, enabled)}
-                  onClick={() => router.push(ROUTES.RULES_EDIT(rule.id))}
+                  id={rule.rule_id}
+                  title={
+                    rule.raw_text.slice(0, 50) +
+                    (rule.raw_text.length > 50 ? '...' : '')
+                  }
+                  description={rule.raw_text}
+                  connectorType={getConnectorTypeForRule(rule)}
+                  isEnabled={rule.status === 'active'}
+                  onToggle={() => handleRuleToggle(rule)}
+                  onClick={() => router.push(ROUTES.RULES_EDIT(rule.rule_id))}
                 />
               </motion.div>
             ))}

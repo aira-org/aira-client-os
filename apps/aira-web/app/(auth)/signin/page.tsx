@@ -5,21 +5,25 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { AuthLayout } from '@/components/layout';
 import { OAuthButtons } from '@/components/auth/oauth-buttons';
+import { useToast } from '@/components/ui/toast';
 import { GOOGLE_AUTH_URL } from '@/lib/api';
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const { showToast } = useToast();
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
 
-    // Redirect to Google OAuth URL with web state
     const authUrl = `${GOOGLE_AUTH_URL}?state=auth:web`;
 
     if (GOOGLE_AUTH_URL) {
       window.location.href = authUrl;
     } else {
-      console.error('GOOGLE_AUTH_URL is not configured');
+      showToast(
+        'Sign-in is not available right now. Please try again later.',
+        'error',
+      );
       setIsLoading(false);
     }
   };
@@ -32,10 +36,6 @@ export default function SignInPage() {
         transition={{ delay: 0.2, duration: 0.5 }}
         className="space-y-8"
       >
-        {/* Description */}
-        <div className="text-center"></div>
-
-        {/* OAuth Buttons */}
         <OAuthButtons
           onGoogleClick={handleGoogleSignIn}
           isLoading={isLoading}

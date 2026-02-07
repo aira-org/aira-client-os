@@ -104,12 +104,12 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
       className={`
         relative overflow-hidden rounded-2xl border border-border/50 
         bg-card/95 backdrop-blur-xl shadow-2xl shadow-black/20
-        min-w-[320px] max-w-[380px]
+        min-w-[320px] max-w-95
         ${isClickable ? 'cursor-pointer' : ''}
       `}
     >
       {/* Gradient accent line */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/50 via-primary to-primary/50" />
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-primary/50 via-primary to-primary/50" />
 
       <div className="flex items-center gap-3 p-4">
         {/* Icon with glow */}

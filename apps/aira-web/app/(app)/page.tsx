@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ScreenLayout } from '@/components/layout';
 import {
   HubHeader,
@@ -21,18 +21,75 @@ import {
 } from '@repo/core';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/lib/constants';
+import { formatRelativeTime } from '@/lib/format';
 
-function formatRelativeTime(dateString: string): string {
-  const now = Date.now();
-  const date = new Date(dateString).getTime();
-  const diffMs = now - date;
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'just now';
-  if (diffMin < 60) return `${diffMin} min ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDays = Math.floor(diffHr / 24);
-  return `${diffDays}d ago`;
+function HubSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-7 w-36" />
+          </div>
+          <Skeleton className="h-12 w-12 rounded-full" />
+        </div>
+        <Skeleton className="h-12 w-full rounded-xl" />
+      </div>
+
+      <div className="flex items-baseline justify-between">
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-4 w-20" />
+      </div>
+
+      <div className="flex gap-2">
+        <Skeleton className="h-9 w-20 rounded-full" />
+        <Skeleton className="h-9 w-28 rounded-full" />
+      </div>
+
+      <div className="space-y-3">
+        <Skeleton className="h-100 w-full rounded-2xl" />
+      </div>
+    </div>
+  );
+}
+
+function CardStackSkeleton() {
+  return (
+    <div className="relative w-full min-h-100">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="absolute inset-0"
+      >
+        <div className="h-full w-full rounded-2xl border border-border bg-card p-5 space-y-4">
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+          <div className="flex-1" />
+          <div className="space-y-3 mt-auto">
+            <Skeleton className="h-px w-full" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-5 rounded-full" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <Skeleton className="h-11 w-full rounded-full" />
+          </div>
+        </div>
+      </motion.div>
+      <div className="absolute inset-0 translate-y-2 scale-[0.97] opacity-50">
+        <div className="h-full w-full rounded-2xl border border-border bg-card" />
+      </div>
+      <div className="absolute inset-0 translate-y-4 scale-[0.94] opacity-25">
+        <div className="h-full w-full rounded-2xl border border-border bg-card" />
+      </div>
+    </div>
+  );
 }
 
 export default function HubPage() {
@@ -223,7 +280,6 @@ export default function HubPage() {
   const pendingCount =
     activeTab === 'tasks' ? filteredCards.length : orderedSuggestions.length;
 
-  // Handle create rule from suggestion
   const handleCreateRule = useCallback(
     (suggestionId: string) => {
       const suggestion = suggestions?.find(
@@ -241,8 +297,29 @@ export default function HubPage() {
     [suggestions, router],
   );
 
-  // Get user's first name or fallback to 'there'
+  const handleGoToWorkspace = useCallback(() => {
+    router.push(ROUTES.WORKSPACE);
+  }, [router]);
+
   const userName = user?.f_n || 'there';
+
+  const tabCounts = useMemo(
+    () => ({
+      tasks: filteredCards.length,
+      suggestions: orderedSuggestions.length,
+    }),
+    [filteredCards.length, orderedSuggestions.length],
+  );
+
+  const isInitialLoading = isLoadingTasks && isLoadingSuggestions;
+
+  if (isInitialLoading) {
+    return (
+      <ScreenLayout maxWidth="xl" className="py-6">
+        <HubSkeleton />
+      </ScreenLayout>
+    );
+  }
 
   return (
     <ScreenLayout maxWidth="xl" className="py-6">
@@ -251,7 +328,6 @@ export default function HubPage() {
         animate={{ opacity: 1 }}
         className="space-y-6"
       >
-        {/* Header */}
         <HubHeader
           userName={userName}
           searchQuery={searchQuery}
@@ -261,58 +337,105 @@ export default function HubPage() {
           onSearchBlur={() => setIsSearchFocused(false)}
         />
 
-        {/* Section header */}
-        <div className="flex items-baseline justify-between">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex items-baseline justify-between"
+        >
           <h2 className="text-lg font-semibold text-foreground">
             {activeTab === 'tasks' ? 'Pending Tasks' : 'Suggestions'}
           </h2>
-          <span className="text-sm text-muted-foreground">
-            {pendingCount} {activeTab === 'tasks' ? 'workflow' : 'suggestion'}
-            {pendingCount !== 1 ? 's' : ''}
-          </span>
-        </div>
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={`${activeTab}-${pendingCount}`}
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 5 }}
+              className="text-sm text-muted-foreground"
+            >
+              {pendingCount} {activeTab === 'tasks' ? 'workflow' : 'suggestion'}
+              {pendingCount !== 1 ? 's' : ''}
+            </motion.span>
+          </AnimatePresence>
+        </motion.div>
 
-        {/* Category Tabs */}
-        <CategoryTabs
-          activeCategory={activeTab}
-          onCategoryChange={handleTabChange}
-        />
-
-        {/* Loading State */}
-        {activeTab === 'tasks' && isLoadingTasks && (
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-              <Skeleton key={i} className="h-80 w-full rounded-xl" />
-            ))}
-          </div>
-        )}
-
-        {activeTab === 'suggestions' && isLoadingSuggestions && (
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-              <Skeleton key={i} className="h-80 w-full rounded-xl" />
-            ))}
-          </div>
-        )}
-
-        {/* Tasks Card Stack */}
-        {activeTab === 'tasks' && !isLoadingTasks && (
-          <CardStack
-            cards={filteredCards}
-            onSendMessage={handleSendMessage}
-            onDismiss={handleDismiss}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <CategoryTabs
+            activeCategory={activeTab}
+            onCategoryChange={handleTabChange}
+            counts={tabCounts}
           />
-        )}
+        </motion.div>
 
-        {/* Suggestions Stack */}
-        {activeTab === 'suggestions' && !isLoadingSuggestions && (
-          <SuggestionStack
-            suggestions={orderedSuggestions}
-            onCreateRule={handleCreateRule}
-            onDismiss={handleSuggestionDismiss}
-            onSendToBack={handleSuggestionSendToBack}
-          />
-        )}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <AnimatePresence mode="wait">
+            {activeTab === 'tasks' && isLoadingTasks && (
+              <motion.div
+                key="tasks-loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <CardStackSkeleton />
+              </motion.div>
+            )}
+
+            {activeTab === 'suggestions' && isLoadingSuggestions && (
+              <motion.div
+                key="suggestions-loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <CardStackSkeleton />
+              </motion.div>
+            )}
+
+            {activeTab === 'tasks' && !isLoadingTasks && (
+              <motion.div
+                key="tasks"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              >
+                <CardStack
+                  cards={filteredCards}
+                  onSendMessage={handleSendMessage}
+                  onDismiss={handleDismiss}
+                  onGoToWorkspace={handleGoToWorkspace}
+                />
+              </motion.div>
+            )}
+
+            {activeTab === 'suggestions' && !isLoadingSuggestions && (
+              <motion.div
+                key="suggestions"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              >
+                <SuggestionStack
+                  suggestions={orderedSuggestions}
+                  onCreateRule={handleCreateRule}
+                  onDismiss={handleSuggestionDismiss}
+                  onSendToBack={handleSuggestionSendToBack}
+                  onGoToWorkspace={handleGoToWorkspace}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </motion.div>
     </ScreenLayout>
   );

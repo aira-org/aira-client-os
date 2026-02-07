@@ -25,6 +25,7 @@ import {
   type IntervalType,
 } from '@/components/editor';
 import { ROUTES } from '@/lib/constants';
+import { useToast } from '@/components/ui/toast';
 import {
   useRules,
   useUpdateRule,
@@ -144,8 +145,8 @@ interface EditRuleFormProps {
 
 function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
   const router = useRouter();
+  const { showToast } = useToast();
 
-  // Mutations
   const { mutate: updateRule, isPending: isUpdating } = useUpdateRule();
   const { mutate: deleteRule, isPending: isDeleting } = useDeleteRule();
 
@@ -178,11 +179,16 @@ function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
   );
   const matchedKeywords = useMemo(() => detectKeywords(rawText), [rawText]);
 
-  // Auto-select connected services that are suggested
+  const [manuallyToggledOff, setManuallyToggledOff] = useState<Set<string>>(
+    new Set(),
+  );
+
   const selectedConnectors = useMemo(() => {
     const connectedIds = connectors.filter(c => c.isConnected).map(c => c.id);
-    return suggestedConnectorIds.filter(id => connectedIds.includes(id));
-  }, [suggestedConnectorIds, connectors]);
+    return suggestedConnectorIds
+      .filter(id => connectedIds.includes(id))
+      .filter(id => !manuallyToggledOff.has(id));
+  }, [suggestedConnectorIds, connectors, manuallyToggledOff]);
 
   const showGroupSelector = selectedConnectors.includes('whatsapp');
 
@@ -201,9 +207,16 @@ function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
     (scheduleEnabled ? scheduleInterval !== 'none' : true) &&
     !isLoading;
 
-  // Connected services are auto-selected (same as mobile)
-  const handleConnectorToggle = useCallback((_id: string) => {
-    // No-op: connected services that are suggested are automatically selected
+  const handleConnectorToggle = useCallback((id: string) => {
+    setManuallyToggledOff(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   }, []);
 
   const handleSave = useCallback(() => {
@@ -230,7 +243,11 @@ function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
 
     updateRule(ruleData, {
       onSuccess: () => {
+        showToast('Rule updated successfully', 'success');
         router.push(ROUTES.WORKSPACE);
+      },
+      onError: () => {
+        showToast('Failed to update rule. Please try again.', 'error');
       },
     });
   }, [
@@ -244,6 +261,7 @@ function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
     scheduleInterval,
     updateRule,
     router,
+    showToast,
   ]);
 
   const handleDelete = useCallback(() => {
@@ -251,12 +269,17 @@ function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
       { rule_id: rule.rule_id },
       {
         onSuccess: () => {
+          showToast('Rule deleted', 'success');
           setShowDeleteDialog(false);
           router.push(ROUTES.WORKSPACE);
         },
+        onError: () => {
+          showToast('Failed to delete rule. Please try again.', 'error');
+          setShowDeleteDialog(false);
+        },
       },
     );
-  }, [rule.rule_id, deleteRule, router]);
+  }, [rule.rule_id, deleteRule, router, showToast]);
 
   return (
     <ScreenLayout maxWidth="lg" className="relative min-h-screen pb-24">
@@ -302,7 +325,7 @@ function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
                 value={rawText}
                 onChange={e => setRawText(e.target.value)}
                 placeholder="Describe what this rule should do..."
-                className="min-h-[100px] resize-none border-0 bg-transparent p-0 text-[15px] focus-visible:ring-0 p-4"
+                className="min-h-25 resize-none border-0 bg-transparent p-3 text-[15px] focus-visible:ring-0"
               />
               {matchedKeywords.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border pt-3">

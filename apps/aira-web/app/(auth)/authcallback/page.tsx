@@ -35,7 +35,6 @@ function AuthCallbackContent() {
     const verifyAndRedirect = async () => {
       console.log('[AuthCallback] Verifying auth via /users/me');
       const user = await verifyAuthState();
-      console.log(user);
       if (user) {
         console.log(
           '[AuthCallback] User fetched successfully, is_active:',

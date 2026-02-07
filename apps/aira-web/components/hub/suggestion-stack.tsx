@@ -9,9 +9,11 @@ import {
   useAnimation,
   type PanInfo,
 } from 'framer-motion';
-import { Lightbulb, X, RotateCcw } from 'lucide-react';
+import { Lightbulb, X, RotateCcw, ArrowRight } from 'lucide-react';
 import { SuggestionCard } from './suggestion-card';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { formatRelativeTime } from '@/lib/format';
 import type { Suggestion } from '@repo/core';
 
 const SWIPE_THRESHOLD = 120;
@@ -22,23 +24,11 @@ interface SuggestionStackProps {
   onCreateRule?: (id: string) => void;
   onDismiss?: (id: string) => void;
   onSendToBack?: (id: string) => void;
+  onGoToWorkspace?: () => void;
   className?: string;
 }
 
-function formatRelativeTime(dateString: string): string {
-  const now = Date.now();
-  const date = new Date(dateString).getTime();
-  const diffMs = now - date;
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDays = Math.floor(diffHr / 24);
-  return `${diffDays}d ago`;
-}
-
-function EmptyState() {
+function EmptyState({ onGoToWorkspace }: { onGoToWorkspace?: () => void }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -51,7 +41,12 @@ function EmptyState() {
         transition={{ type: 'spring', damping: 18, stiffness: 150 }}
         className="mb-4 rounded-3xl bg-card p-6"
       >
-        <Lightbulb className="h-12 w-12 text-muted-foreground" />
+        <motion.div
+          animate={{ y: [0, -4, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <Lightbulb className="h-12 w-12 text-muted-foreground" />
+        </motion.div>
       </motion.div>
       <motion.h3
         initial={{ opacity: 0, y: 10 }}
@@ -69,6 +64,24 @@ function EmptyState() {
       >
         We&apos;ll suggest helpful rules as we learn your preferences
       </motion.p>
+      {onGoToWorkspace && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-6"
+        >
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onGoToWorkspace}
+            className="rounded-full gap-2"
+          >
+            Go to Workspace
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+        </motion.div>
+      )}
     </motion.div>
   );
 }
@@ -109,7 +122,6 @@ function StackedCard({
     [0.65, 1, 0.65],
   );
 
-  // Swipe indicators
   const leftIndicator = useTransform(
     dragX,
     [-SWIPE_THRESHOLD, -30, 0],
@@ -193,7 +205,6 @@ function StackedCard({
         isTopCard && 'cursor-grab',
       )}
     >
-      {/* Swipe indicators */}
       {isTopCard && (
         <>
           <motion.div
@@ -211,7 +222,6 @@ function StackedCard({
         </>
       )}
 
-      {/* The card itself — large rounded corners like the reference */}
       <div
         className={cn(
           'h-full w-full rounded-[24px] border border-border bg-card flex flex-col overflow-hidden',
@@ -233,6 +243,7 @@ export function SuggestionStack({
   onCreateRule,
   onDismiss,
   onSendToBack,
+  onGoToWorkspace,
   className,
 }: SuggestionStackProps) {
   const visibleSuggestions = useMemo(
@@ -252,7 +263,7 @@ export function SuggestionStack({
   );
 
   if (suggestions.length === 0) {
-    return <EmptyState />;
+    return <EmptyState onGoToWorkspace={onGoToWorkspace} />;
   }
 
   const cardElements = visibleSuggestions
@@ -285,7 +296,6 @@ export function SuggestionStack({
 
   return (
     <div className={cn('relative w-full', className)}>
-      {/* Counter pill */}
       {suggestions.length > 1 && (
         <motion.div
           key={suggestions.length}
@@ -299,15 +309,10 @@ export function SuggestionStack({
         </motion.div>
       )}
 
-      {/* Stack area — enough height for card + behind-card peek */}
-      <div
-        className="relative w-full min-h-[480px]"
-        style={{ paddingBottom: 28 }}
-      >
+      <div className="relative w-full min-h-120" style={{ paddingBottom: 28 }}>
         <AnimatePresence mode="popLayout">{cardElements}</AnimatePresence>
       </div>
 
-      {/* Hint */}
       {suggestions.length > 1 && (
         <motion.p
           initial={{ opacity: 0 }}

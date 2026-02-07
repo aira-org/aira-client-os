@@ -8,6 +8,7 @@ import { AuthLayout } from '@/components/layout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useUpdateUser } from '@repo/core';
+import { useToast } from '@/components/ui/toast';
 import { ROUTES } from '@/lib/constants';
 
 const MAX_NAME_LENGTH = 50;
@@ -16,11 +17,11 @@ export default function NamePage() {
   const router = useRouter();
   const [name, setName] = useState('');
   const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
+  const { showToast } = useToast();
 
   const handleContinue = async () => {
     if (!name.trim() || isUpdating) return;
 
-    // Split name into first and last name
     const nameParts = name.trim().split(' ');
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
@@ -31,8 +32,8 @@ export default function NamePage() {
         onSuccess: () => {
           router.push(ROUTES.HUB);
         },
-        onError: error => {
-          console.error('Failed to update name:', error);
+        onError: () => {
+          showToast('Failed to save name. Please try again.', 'error');
         },
       },
     );

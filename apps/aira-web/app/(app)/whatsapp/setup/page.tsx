@@ -202,7 +202,7 @@ export default function WhatsAppSetupPage() {
             </p>
 
             {/* Code Display */}
-            <div className="mb-4 min-h-[48px]">
+            <div className="mb-4 min-h-12">
               {linkCode ? (
                 <motion.p
                   key={linkCode}

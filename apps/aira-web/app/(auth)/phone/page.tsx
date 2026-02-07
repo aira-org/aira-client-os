@@ -9,6 +9,7 @@ import { PhoneInput, AssistantAvatar } from '@/components/auth';
 import { Button } from '@/components/ui/button';
 import { useUpdateUser, useAuthActions, queryClient } from '@repo/core';
 import { webTokenStorage } from '@/lib/api';
+import { useToast } from '@/components/ui/toast';
 import { ROUTES } from '@/lib/constants';
 
 export default function PhonePage() {
@@ -16,6 +17,7 @@ export default function PhonePage() {
   const [phone, setPhone] = useState('');
   const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
   const { logout } = useAuthActions();
+  const { showToast } = useToast();
 
   const cleanedPhone = phone.replace(/\D/g, '');
   const isValidPhone = cleanedPhone.length >= 8 && cleanedPhone.length <= 15;
@@ -37,11 +39,13 @@ export default function PhonePage() {
       { p_n: formattedPhone.replace(/\s+/g, '') },
       {
         onSuccess: () => {
-          // User is now active, redirect to hub
-          router.replace(ROUTES.HUB);
+          router.replace(ROUTES.NAME);
         },
-        onError: error => {
-          console.error('Failed to update phone number:', error);
+        onError: () => {
+          showToast(
+            'Failed to verify phone number. Please try again.',
+            'error',
+          );
         },
       },
     );
