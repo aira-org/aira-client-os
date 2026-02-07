@@ -11,8 +11,9 @@ import {
 } from 'framer-motion';
 import { Lightbulb, X, RotateCcw } from 'lucide-react';
 import { SuggestionCard } from './suggestion-card';
-import { cn } from '@/lib/utils';
+import { cn, formatRelativeTime } from '@/lib/utils';
 import type { Suggestion } from '@repo/core';
+
 
 const SWIPE_THRESHOLD = 120;
 const SWIPE_VELOCITY_THRESHOLD = 400;
@@ -23,22 +24,14 @@ interface SuggestionStackProps {
   onDismiss?: (id: string) => void;
   onSendToBack?: (id: string) => void;
   className?: string;
+  searchQuery?: string;
 }
 
-function formatRelativeTime(dateString: string): string {
-  const now = Date.now();
-  const date = new Date(dateString).getTime();
-  const diffMs = now - date;
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDays = Math.floor(diffHr / 24);
-  return `${diffDays}d ago`;
-}
 
-function EmptyState() {
+// Local formatter removed - using utility from @/lib/utils
+
+
+function EmptyState({ searchQuery }: { searchQuery?: string }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -59,7 +52,7 @@ function EmptyState() {
         transition={{ delay: 0.1 }}
         className="text-lg font-semibold text-foreground"
       >
-        All caught up
+        {searchQuery ? 'No results found' : 'All caught up'}
       </motion.h3>
       <motion.p
         initial={{ opacity: 0, y: 8 }}
@@ -67,11 +60,14 @@ function EmptyState() {
         transition={{ delay: 0.2 }}
         className="mt-1 text-sm text-muted-foreground"
       >
-        We&apos;ll suggest helpful rules as we learn your preferences
+        {searchQuery
+          ? `We couldn't find any suggestions matching "${searchQuery}"`
+          : "We'll suggest helpful rules as we learn your preferences"}
       </motion.p>
     </motion.div>
   );
 }
+
 
 /* ── Stack offsets inspired by the reference image ──
    Behind cards peek out with slight rotation + vertical/horizontal offset,
@@ -234,6 +230,7 @@ export function SuggestionStack({
   onDismiss,
   onSendToBack,
   className,
+  searchQuery,
 }: SuggestionStackProps) {
   const visibleSuggestions = useMemo(
     () => suggestions.slice(0, 3),
@@ -252,8 +249,9 @@ export function SuggestionStack({
   );
 
   if (suggestions.length === 0) {
-    return <EmptyState />;
+    return <EmptyState searchQuery={searchQuery} />;
   }
+
 
   const cardElements = visibleSuggestions
     .map((suggestion, index) => {

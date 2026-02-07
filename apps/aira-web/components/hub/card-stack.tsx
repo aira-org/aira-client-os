@@ -51,6 +51,7 @@ interface CardStackProps {
   activeCategory?: string;
   otherCategoryTasks?: { id: string; label: string; count: number }[];
   onCategoryPress?: (categoryId: string) => void;
+  searchQuery?: string;
 }
 
 // Priority colors
@@ -66,11 +67,13 @@ function EmptyState({
   activeCategory,
   otherCategoryTasks = [],
   onCategoryPress,
+  searchQuery,
 }: {
   isFiltered?: boolean;
   activeCategory?: string;
   otherCategoryTasks?: { id: string; label: string; count: number }[];
   onCategoryPress?: (categoryId: string) => void;
+  searchQuery?: string;
 }) {
   const totalOtherTasks = otherCategoryTasks.reduce(
     (sum, cat) => sum + cat.count,
@@ -78,12 +81,20 @@ function EmptyState({
   );
 
   const getEmptyMessage = () => {
+    if (searchQuery) {
+      return {
+        title: 'No results found',
+        subtitle: `We couldn't find any tasks matching "${searchQuery}"`,
+      };
+    }
+
     if (!isFiltered) {
       return {
         title: 'All caught up!',
         subtitle: 'No workflows pending review',
       };
     }
+
 
     if (totalOtherTasks > 0) {
       return {
@@ -300,6 +311,7 @@ export function CardStack({
   activeCategory,
   otherCategoryTasks = [],
   onCategoryPress,
+  searchQuery,
 }: CardStackProps) {
   // Only show top 3 cards for visual stack
   const visibleCards = useMemo(() => cards.slice(0, 3), [cards]);
@@ -319,9 +331,11 @@ export function CardStack({
         activeCategory={activeCategory}
         otherCategoryTasks={otherCategoryTasks}
         onCategoryPress={onCategoryPress}
+        searchQuery={searchQuery}
       />
     );
   }
+
 
   // Render cards in reverse order so top card is rendered last (on top)
   const cardElements = visibleCards
