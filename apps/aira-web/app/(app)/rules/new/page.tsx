@@ -24,6 +24,7 @@ import {
   type IntervalType,
 } from '@/components/editor';
 import { ROUTES } from '@/lib/constants';
+import { useToast } from '@/components/ui/toast';
 import {
   useCreateRule,
   useWahaGroups,
@@ -39,7 +40,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { CreateRuleRequest } from '../../../../../../packages/core/src/schemas';
+import { type CreateRuleRequest } from '@repo/core';
 
 const INTERVAL_TO_DAYS: Record<IntervalType, number> = {
   none: 0,
@@ -109,8 +110,8 @@ function detectKeywords(text: string): string[] {
 export default function NewRulePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { showToast } = useToast();
 
-  // Fetch connectors status
   const { data: connectorsData } = useConnectors();
 
   // Fetch WhatsApp groups
@@ -202,11 +203,16 @@ export default function NewRulePage() {
   );
   const matchedKeywords = useMemo(() => detectKeywords(rawText), [rawText]);
 
-  // Auto-select connected services that are suggested (computed, not stored in state)
+  const [manuallyToggledOff, setManuallyToggledOff] = useState<Set<string>>(
+    new Set(),
+  );
+
   const selectedConnectors = useMemo(() => {
     const connectedIds = connectors.filter(c => c.isConnected).map(c => c.id);
-    return suggestedConnectorIds.filter(id => connectedIds.includes(id));
-  }, [suggestedConnectorIds, connectors]);
+    return suggestedConnectorIds
+      .filter(id => connectedIds.includes(id))
+      .filter(id => !manuallyToggledOff.has(id));
+  }, [suggestedConnectorIds, connectors, manuallyToggledOff]);
 
   const showGroupSelector = selectedConnectors.includes('whatsapp');
 
@@ -224,9 +230,16 @@ export default function NewRulePage() {
     (scheduleEnabled ? scheduleInterval !== 'none' : true) &&
     !isCreating;
 
-  // Connected services are auto-selected and cannot be manually deselected (same as mobile)
-  const handleConnectorToggle = useCallback((_id: string) => {
-    // No-op: connected services that are suggested are automatically selected
+  const handleConnectorToggle = useCallback((id: string) => {
+    setManuallyToggledOff(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   }, []);
 
   const handleIntegrate = useCallback(
@@ -280,7 +293,11 @@ export default function NewRulePage() {
 
     createRule(ruleData, {
       onSuccess: () => {
+        showToast('Rule created successfully', 'success');
         router.back();
+      },
+      onError: () => {
+        showToast('Failed to create rule. Please try again.', 'error');
       },
     });
   }, [
@@ -293,6 +310,7 @@ export default function NewRulePage() {
     createRule,
     router,
     suggestionId,
+    showToast,
   ]);
 
   return (
@@ -332,7 +350,7 @@ export default function NewRulePage() {
                 value={rawText}
                 onChange={e => setRawText(e.target.value)}
                 placeholder="Describe what this rule should do..."
-                className="min-h-[100px] resize-none border-0 bg-transparent p-0 text-[15px] focus-visible:ring-0 p-3"
+                className="min-h-25 resize-none border-0 bg-transparent p-3 text-[15px] focus-visible:ring-0"
               />
               {matchedKeywords.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border pt-3">

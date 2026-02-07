@@ -46,6 +46,32 @@ interface UIConnector {
   lastSync?: string;
 }
 
+const SERVICE_KEYWORDS: Record<string, string[]> = {
+  google_drive: ['drive', 'file', 'document', 'folder', 'upload', 'download'],
+  google_calendar: [
+    'calendar',
+    'event',
+    'meeting',
+    'schedule',
+    'appointment',
+    'reminder',
+  ],
+  email_scope: ['email', 'mail', 'send', 'inbox'],
+};
+
+function countRulesForConnector(
+  rules: Array<{ raw_text: string }>,
+  connectorServiceName?: string,
+): number {
+  if (!connectorServiceName) return rules.length;
+  const keywords = SERVICE_KEYWORDS[connectorServiceName];
+  if (!keywords) return 0;
+  return rules.filter(r => {
+    const text = r.raw_text.toLowerCase();
+    return keywords.some(kw => text.includes(kw));
+  }).length;
+}
+
 export default function WorkspacePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -99,17 +125,15 @@ export default function WorkspacePage() {
       },
       {
         onSuccess: () => {
-          // Refetch rules to update the UI
           refetchRules();
         },
       },
     );
   };
 
-  // Build connectors list with connection status from API
   const connectors: UIConnector[] = useMemo(() => {
     const availableServices = connectorsData?.available_services ?? [];
-    const whatsappRulesCount = rulesData?.length ?? 0;
+    const allRules = rulesData ?? [];
 
     return [
       {
@@ -117,9 +141,9 @@ export default function WorkspacePage() {
         name: 'WhatsApp',
         type: 'whatsapp' as ConnectorType,
         isConnected: availableServices.includes('whatsapp'),
-        rulesCount: whatsappRulesCount,
+        rulesCount: allRules.length,
         groupsCount: 0,
-        lastSync: whatsappRulesCount > 0 ? 'Synced' : undefined,
+        lastSync: allRules.length > 0 ? 'Synced' : undefined,
       },
       {
         id: 'email',
@@ -127,7 +151,7 @@ export default function WorkspacePage() {
         name: 'Email',
         type: 'email' as ConnectorType,
         isConnected: availableServices.includes('email_scope'),
-        rulesCount: 0,
+        rulesCount: countRulesForConnector(allRules, 'email_scope'),
       },
       {
         id: 'calendar',
@@ -135,7 +159,7 @@ export default function WorkspacePage() {
         name: 'Google Calendar',
         type: 'calendar' as ConnectorType,
         isConnected: availableServices.includes('google_calendar'),
-        rulesCount: 0,
+        rulesCount: countRulesForConnector(allRules, 'google_calendar'),
       },
       {
         id: 'drive',
@@ -143,7 +167,7 @@ export default function WorkspacePage() {
         name: 'Google Drive',
         type: 'drive' as ConnectorType,
         isConnected: availableServices.includes('google_drive'),
-        rulesCount: 0,
+        rulesCount: countRulesForConnector(allRules, 'google_drive'),
       },
     ];
   }, [connectorsData, rulesData]);

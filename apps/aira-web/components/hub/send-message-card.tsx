@@ -442,7 +442,7 @@ export function SendMessageCard({
             ))}
           </div>
 
-          <span className="text-sm font-mono text-foreground min-w-[45px] text-center">
+          <span className="text-sm font-mono text-foreground min-w-11.25 text-center">
             {formatDuration(recordingDuration)}
           </span>
 

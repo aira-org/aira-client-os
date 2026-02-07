@@ -68,7 +68,7 @@ export function OAuthButtons({
               initial={{ x: '-100%' }}
               animate={{ x: '200%' }}
               transition={{ duration: 1, ease: 'easeInOut' }}
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+              className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent"
             />
           )}
 
