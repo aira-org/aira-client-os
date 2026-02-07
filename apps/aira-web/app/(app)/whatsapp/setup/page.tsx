@@ -315,8 +315,17 @@ export default function WhatsAppSetupPage() {
 
             <ActionButton
               onClick={handleRefresh}
-              icon={<RefreshCw className={cn('h-4 w-4 text-primary')} />}
-              label="New Code"
+              icon={
+                remainingTime <= 0 && (
+                  <RefreshCw className={cn('h-4 w-4 text-primary')} />
+                )
+              }
+              label={
+                remainingTime > 0
+                  ? `New Code in ${minutes}:${seconds.toString().padStart(2, '0')}`
+                  : 'New Code'
+              }
+              disabled={remainingTime > 0}
             />
           </motion.div>
 
