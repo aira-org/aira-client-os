@@ -4,6 +4,8 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ScreenLayout } from '@/components/layout';
+import { cn, formatRelativeTime } from '@/lib/utils';
+
 import {
   HubHeader,
   CategoryTabs,
@@ -22,18 +24,8 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/lib/constants';
 
-function formatRelativeTime(dateString: string): string {
-  const now = Date.now();
-  const date = new Date(dateString).getTime();
-  const diffMs = now - date;
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'just now';
-  if (diffMin < 60) return `${diffMin} min ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDays = Math.floor(diffHr / 24);
-  return `${diffDays}d ago`;
-}
+// Local formatter removed - using utility from @/lib/utils
+
 
 export default function HubPage() {
   const router = useRouter();
@@ -105,13 +97,29 @@ export default function HubPage() {
     });
   }, [cards, searchQuery, dismissedCardIds]);
 
-  // Filter suggestions based on dismissed state
+  // Filter suggestions based on dismissed state AND search query
   const filteredSuggestions = useMemo(() => {
     if (!suggestions) return [];
-    return suggestions.filter(
-      suggestion => !dismissedSuggestionIds.has(suggestion._id),
-    );
-  }, [suggestions, dismissedSuggestionIds]);
+    return suggestions.filter(suggestion => {
+      // Filter out dismissed suggestions
+      if (dismissedSuggestionIds.has(suggestion._id)) {
+        return false;
+      }
+
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return (
+          suggestion.display_rule.toLowerCase().includes(query) ||
+          suggestion.why.toLowerCase().includes(query) ||
+          suggestion.action.toLowerCase().includes(query)
+        );
+      }
+
+      return true;
+    });
+  }, [suggestions, dismissedSuggestionIds, searchQuery]);
+
 
   // Handle sending message
   const handleSendMessage = useCallback(
@@ -301,7 +309,9 @@ export default function HubPage() {
             cards={filteredCards}
             onSendMessage={handleSendMessage}
             onDismiss={handleDismiss}
+            searchQuery={searchQuery}
           />
+
         )}
 
         {/* Suggestions Stack */}
@@ -311,7 +321,9 @@ export default function HubPage() {
             onCreateRule={handleCreateRule}
             onDismiss={handleSuggestionDismiss}
             onSendToBack={handleSuggestionSendToBack}
+            searchQuery={searchQuery}
           />
+
         )}
       </motion.div>
     </ScreenLayout>
