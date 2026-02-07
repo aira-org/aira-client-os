@@ -16,6 +16,8 @@ import {
 } from '@repo/core';
 import Header from '@/components/ui/header';
 import { useToast } from '@/components/ui/toast';
+import { HowToLinkModal } from '@/components/whatsapp/how-to-link-Modal';
+import { useMediaQuery } from '@/hooks';
 
 // WhatsApp Logo SVG Component
 function WhatsAppLogo({ className }: { className?: string }) {
@@ -99,6 +101,8 @@ export default function WhatsAppSetupPage() {
   const [copied, setCopied] = useState(false);
   const hasCalledConnect = useRef(false);
   const EXPIRY_TIME = 5 * 60 * 1000;
+
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   const [expiresAt, setExpiresAt] = useState(() => {
     return Date.now() + EXPIRY_TIME;
@@ -387,7 +391,11 @@ export default function WhatsAppSetupPage() {
       </div>
 
       {/* How to Link Dialog */}
-      <HowToLinkDialog open={showHowTo} onOpenChange={setShowHowTo} />
+      {isMobile ? (
+        <HowToLinkDialog open={showHowTo} onOpenChange={setShowHowTo} />
+      ) : (
+        <HowToLinkModal open={showHowTo} onOpenChange={setShowHowTo} />
+      )}
     </ScreenLayout>
   );
 }
