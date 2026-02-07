@@ -1,4 +1,6 @@
 // Browser EventSource interface for cross-platform compatibility
+import { logger } from './logger';
+
 interface SSEInstance {
   onopen: (() => void) | null;
   onmessage: ((event: { data: string }) => void) | null;
@@ -41,7 +43,7 @@ export const listenToSSE = <T = unknown>(options: SSEListenerOptions<T>): Promis
     let isCompleted = false;
 
     const cleanup = (): void => {
-      console.warn('[SSE] Cleaning up connection');
+      logger.debug('[SSE] Cleaning up connection');
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
@@ -65,44 +67,44 @@ export const listenToSSE = <T = unknown>(options: SSEListenerOptions<T>): Promis
 
     timeoutId = setTimeout(() => {
       if (!isCompleted) {
-        console.error('[SSE] Connection timeout after', timeout, 'ms');
+        logger.error('[SSE] Connection timeout after', timeout, 'ms');
         handleError(new Error('SSE connection timeout'));
       }
     }, timeout);
 
     try {
       eventSource = new EventSource(fullURL, { withCredentials: true });
-      console.warn('[SSE] Connecting to:', fullURL);
+      logger.debug('[SSE] Connecting to:', fullURL);
 
       eventSource.onopen = () => {
-        console.warn('[SSE] Connection established');
+        logger.debug('[SSE] Connection established');
       };
 
       eventSource.onmessage = event => {
-        console.warn('[SSE] Generic message received (ignoring):', event.data);
+        logger.debug('[SSE] Generic message received (ignoring):', event.data);
       };
 
       eventSource.addEventListener(completeEvent, (event: { data?: string }) => {
-        console.warn(`[SSE] Completion event '${completeEvent}' received`);
+        logger.debug(`[SSE] Completion event '${completeEvent}' received`);
         try {
           const parsed = JSON.parse(event.data ?? '') as T;
-          console.warn('[SSE] Completion data:', parsed);
+          logger.debug('[SSE] Completion data:', parsed);
           onMessage(parsed);
           handleComplete();
         } catch {
-          console.warn('[SSE] Completing without data');
+          logger.debug('[SSE] Completing without data');
           handleComplete();
         }
       });
 
       eventSource.addEventListener('error', () => {
         if (!isCompleted) {
-          console.error('[SSE] Connection error occurred');
+          logger.error('[SSE] Connection error occurred');
           handleError(new Error('SSE connection error'));
         }
       });
     } catch (err) {
-      console.error('[SSE] Failed to create connection:', err);
+      logger.error('[SSE] Failed to create connection:', err);
       handleError(err instanceof Error ? err : new Error('Failed to create SSE connection'));
     }
   });

@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance, type AxiosError } from 'axios';
 import { type z } from 'zod';
 import type { TokenStorage } from '../utils';
+import { logger } from '../utils/logger';
 
 declare const process: { env: { NODE_ENV?: string } } | undefined;
 declare const __DEV__: boolean | undefined;
@@ -80,25 +81,25 @@ export class ApiClient {
           config.headers.Authorization = `Bearer ${token}`;
         }
       }
-      // Log request headers in dev mode
+      // Log request in dev mode
       if (this.isDevMode()) {
-        console.warn(`🚀 API Request: ${config.url}`, config);
+        logger.api(config.method || 'GET', config.url || '', config.data);
       }
       return config;
     });
 
     this.axios.interceptors.response.use(
       res => {
-        // Log response headers and data in dev mode
+        // Log response in dev mode
         if (this.isDevMode()) {
-          console.warn(`✅ API Response: ${res.config.url}`, res);
+          logger.apiResponse(res.config.url || '', res.data);
         }
         return res;
       },
       (error: AxiosError) => {
         if ([401, 403, 404].includes(Number(error.response?.status)) && this.onUnauthorized) {
           Promise.resolve(this.onUnauthorized()).catch(err => {
-            console.error('Error in onUnauthorized handler:', err);
+            logger.error('Error in onUnauthorized handler:', err);
           });
         }
 
@@ -127,7 +128,7 @@ export class ApiClient {
 
   private logRequestError(url: string, error: unknown): void {
     if (this.isDevMode()) {
-      console.warn(`❌ API request failed: ${url}`, error);
+      logger.apiError(url, error);
     }
   }
 
