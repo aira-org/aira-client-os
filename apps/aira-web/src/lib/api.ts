@@ -1,8 +1,7 @@
 import { initApiClient, getApiClient, TOKEN_KEY, authStore } from '@repo/core';
 import type { TokenStorage, User } from '@repo/core';
 
-const baseURL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || '';
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 if (!baseURL) {
   throw new Error(
@@ -46,9 +45,7 @@ export const webTokenStorage: TokenStorage = {
 };
 
 // Google OAuth URL for web
-export const GOOGLE_AUTH_URL =
-  process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL ||
-  '';
+export const GOOGLE_AUTH_URL = process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL || '';
 
 const apiClient = initApiClient({
   baseURL,
@@ -65,38 +62,87 @@ const apiClient = initApiClient({
 });
 
 // Check if user has valid token on startup
+// export async function hydrateAuthState(): Promise<boolean> {
+//   const token = await webTokenStorage.get();
+//   console.log('[Auth] Hydrating auth state, token found:', !!token);
+//   console.log(
+//     '[Auth] All cookies:',
+//     typeof document !== 'undefined' ? document.cookie : 'SSR',
+//   );
+
+//   if (token) {
+//     authStore.setState({ isAuthenticated: true, isLoading: false });
+//     return true;
+//   }
+
+//   // If no token in JS-accessible cookies, the cookie might be HttpOnly
+//   // In that case, we'll assume authenticated and let the API call verify
+//   // The useUser hook will fail if not actually authenticated
+//   authStore.setState({ isAuthenticated: false, isLoading: false });
+//   return false;
+// }
+
+// Bypassing auth for Dev
 export async function hydrateAuthState(): Promise<boolean> {
+  if (process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS === 'true') {
+    console.log('[Auth] DEV AUTH BYPASS ENABLED');
+
+    authStore.setState({
+      isAuthenticated: true,
+      isLoading: false,
+    });
+
+    return true;
+  }
+
   const token = await webTokenStorage.get();
-  console.log('[Auth] Hydrating auth state, token found:', !!token);
-  console.log(
-    '[Auth] All cookies:',
-    typeof document !== 'undefined' ? document.cookie : 'SSR',
-  );
 
   if (token) {
     authStore.setState({ isAuthenticated: true, isLoading: false });
     return true;
   }
 
-  // If no token in JS-accessible cookies, the cookie might be HttpOnly
-  // In that case, we'll assume authenticated and let the API call verify
-  // The useUser hook will fail if not actually authenticated
   authStore.setState({ isAuthenticated: false, isLoading: false });
   return false;
 }
 
 // Verify auth by making an API call and return user data
 // Browser sends HttpOnly cookie automatically with withCredentials: true
+// export async function verifyAuthState(): Promise<User | null> {
+//   console.log('[Auth] Verifying auth state via API...');
+//   try {
+//     const client = getApiClient();
+//     const user = await client.get<User>('/v1/users/me');
+//     console.log('[Auth] Verification successful, user:', user?.e || user?.i);
+//     authStore.setState({ isAuthenticated: true, isLoading: false });
+//     return user;
+//   } catch (error) {
+//     console.log('[Auth] Verification failed:', error);
+//     authStore.setState({ isAuthenticated: false, isLoading: false });
+//     return null;
+//   }
+// }
+
 export async function verifyAuthState(): Promise<User | null> {
-  console.log('[Auth] Verifying auth state via API...');
+  if (process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS === 'true') {
+    console.log('[Auth] Skipping verifyAuthState in dev');
+
+    const mockUser = {
+      id: 'dev-user',
+      email: 'dev@local.app',
+      name: 'Local Dev',
+    } as User;
+
+    authStore.setState({ isAuthenticated: true, isLoading: false });
+    return mockUser;
+  }
+
   try {
     const client = getApiClient();
     const user = await client.get<User>('/v1/users/me');
-    console.log('[Auth] Verification successful, user:', user?.e || user?.i);
     authStore.setState({ isAuthenticated: true, isLoading: false });
     return user;
   } catch (error) {
-    console.log('[Auth] Verification failed:', error);
     authStore.setState({ isAuthenticated: false, isLoading: false });
     return null;
   }
