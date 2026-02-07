@@ -60,14 +60,14 @@ const SERVICE_KEYWORDS: Record<string, string[]> = {
 };
 
 function countRulesForConnector(
-  rules: Array<{ raw_text: string }>,
+  rules: Array<{ raw_text?: string }>,
   connectorServiceName?: string,
 ): number {
   if (!connectorServiceName) return rules.length;
   const keywords = SERVICE_KEYWORDS[connectorServiceName];
   if (!keywords) return 0;
   return rules.filter(r => {
-    const text = r.raw_text.toLowerCase();
+    const text = (r.raw_text ?? '').toLowerCase();
     return keywords.some(kw => text.includes(kw));
   }).length;
 }
