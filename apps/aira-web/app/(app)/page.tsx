@@ -21,6 +21,7 @@ import {
 } from '@repo/core';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/lib/constants';
+import { useDebouncedValue } from '@/hooks/use-debounce';
 
 function formatRelativeTime(dateString: string): string {
   const now = Date.now();
@@ -49,6 +50,9 @@ export default function HubPage() {
   const [dismissedSuggestionIds, setDismissedSuggestionIds] = useState<
     Set<string>
   >(new Set());
+
+  // Debounce search query to reduce expensive re-renders
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
   // Fetch user data
   const { data: user } = useUser();
@@ -84,7 +88,7 @@ export default function HubPage() {
     );
   }, [apexTasks]);
 
-  // Filter cards based on search and dismissed state
+  // Filter cards based on debounced search and dismissed state
   const filteredCards = useMemo(() => {
     return cards.filter(card => {
       // Filter out dismissed cards
@@ -92,9 +96,9 @@ export default function HubPage() {
         return false;
       }
 
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
+      // Search filter using debounced value
+      if (debouncedSearchQuery) {
+        const query = debouncedSearchQuery.toLowerCase();
         return (
           card.title.toLowerCase().includes(query) ||
           (card.subtitle?.toLowerCase().includes(query) ?? false)
@@ -103,7 +107,7 @@ export default function HubPage() {
 
       return true;
     });
-  }, [cards, searchQuery, dismissedCardIds]);
+  }, [cards, debouncedSearchQuery, dismissedCardIds]);
 
   // Filter suggestions based on dismissed state
   const filteredSuggestions = useMemo(() => {
