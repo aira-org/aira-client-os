@@ -56,7 +56,7 @@ const INTERVAL_TO_DAYS: Record<IntervalType, number> = {
 };
 
 const DAYS_TO_INTERVAL: Record<number, IntervalType> = {
-  0: 'none',
+  0: 'once',
   1: 'daily',
   7: 'weekly',
   30: 'monthly',
@@ -75,6 +75,14 @@ const parseTriggerTimeToLocal = (utcString?: string): string => {
   if (!utcString || utcString === 'Real-time') {
     return '09:00';
   }
+  const date = new Date(utcString);
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+
+const parseTriggerTimeEndToLocal = (utcString?: string | null): string => {
+  if (!utcString) return '17:00';
   const date = new Date(utcString);
   const hours = date.getHours().toString().padStart(2, '0');
   const minutes = date.getMinutes().toString().padStart(2, '0');
@@ -136,7 +144,10 @@ interface EditRuleFormProps {
     w_id: string[];
     status: 'active' | 'inactive';
     trigger_time?: string;
+    trigger_time_end?: string | null;
     interval?: number;
+    interval_minutes?: number | null;
+    run_count?: number | null;
   };
   connectors: Connector[];
   groups: Array<{ id: string; name: string; rulesCount: number }>;
@@ -162,10 +173,21 @@ function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
   const [scheduleTime, setScheduleTime] = useState(
     initialHasSchedule ? parseTriggerTimeToLocal(rule.trigger_time) : '09:00',
   );
+  const [scheduleTimeEnd, setScheduleTimeEnd] = useState(
+    initialHasSchedule
+      ? parseTriggerTimeEndToLocal(rule.trigger_time_end)
+      : '17:00',
+  );
   const [scheduleInterval, setScheduleInterval] = useState<IntervalType>(
     initialHasSchedule
       ? (DAYS_TO_INTERVAL[rule.interval ?? 0] ?? 'daily')
       : 'none',
+  );
+  const [scheduleRunCount, setScheduleRunCount] = useState(
+    rule.run_count ?? 1,
+  );
+  const [scheduleIntervalMinutes, setScheduleIntervalMinutes] = useState(
+    rule.interval_minutes ?? 0,
   );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showGroupPicker, setShowGroupPicker] = useState(false);
@@ -215,7 +237,10 @@ function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
       raw_text: string;
       status: 'active' | 'inactive';
       trigger_time?: string;
+      trigger_time_end?: string;
       interval?: number;
+      interval_minutes?: number;
+      run_count?: number;
     } = {
       rule_id: rule.rule_id,
       w_id: selectedGroups,
@@ -225,7 +250,15 @@ function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
 
     if (scheduleEnabled) {
       ruleData.trigger_time = buildTriggerTimeUTC(scheduleTime);
+      if (scheduleTimeEnd?.trim()) {
+        ruleData.trigger_time_end = buildTriggerTimeUTC(scheduleTimeEnd);
+      }
       ruleData.interval = INTERVAL_TO_DAYS[scheduleInterval];
+      if (scheduleInterval === 'once') {
+        ruleData.run_count = scheduleRunCount;
+      } else if (scheduleIntervalMinutes > 0) {
+        ruleData.interval_minutes = scheduleIntervalMinutes;
+      }
     }
 
     updateRule(ruleData, {
@@ -242,6 +275,9 @@ function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
     scheduleEnabled,
     scheduleTime,
     scheduleInterval,
+    scheduleTimeEnd,
+    scheduleRunCount,
+    scheduleIntervalMinutes,
     updateRule,
     router,
   ]);
@@ -374,25 +410,33 @@ function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
               onToggle={setScheduleEnabled}
               time={scheduleTime}
               onTimeChange={setScheduleTime}
+              timeEnd={scheduleTimeEnd}
+              onTimeEndChange={setScheduleTimeEnd}
               interval={scheduleInterval}
               onIntervalChange={setScheduleInterval}
+              runCount={scheduleRunCount}
+              onRunCountChange={setScheduleRunCount}
+              intervalMinutes={scheduleIntervalMinutes}
+              onIntervalMinutesChange={setScheduleIntervalMinutes}
             />
           </motion.div>
         </div>
 
-        {/* Bottom Save Button */}
-        <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background px-5 py-4">
-          <Button
-            onClick={handleSave}
-            disabled={!canSave}
-            className={cn(
-              'w-full rounded-2xl py-6 text-base font-semibold',
-              !canSave && 'opacity-50',
-            )}
-          >
-            <Check className="mr-2 h-5 w-5" />
-            {isUpdating ? 'Saving...' : 'Save Changes'}
-          </Button>
+        {/* Bottom Save Button - width aligned with content (max-w-lg) */}
+        <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background py-4">
+          <div className="mx-auto max-w-md px-5">
+            <Button
+              onClick={handleSave}
+              disabled={!canSave}
+              className={cn(
+                'w-full rounded-2xl py-6 text-base font-semibold',
+                !canSave && 'opacity-50',
+              )}
+            >
+              <Check className="mr-2 h-5 w-5" />
+              {isUpdating ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
         </div>
       </motion.div>
 

@@ -8,7 +8,13 @@ export const RuleSchema = z.object({
   raw_text: z.string(),
   status: RuleStatusSchema,
   trigger_time: z.string().nullable().optional(),
+  /** End time for "once" window or daily time span. */
+  trigger_time_end: z.string().nullable().optional(),
   interval: z.number().nullable().optional(),
+  /** Repeat every X minutes within time span (daily etc.). */
+  interval_minutes: z.number().nullable().optional(),
+  /** For "once": how many times to run in the window. */
+  run_count: z.number().nullable().optional(),
   is_default: z.boolean(),
 });
 
@@ -26,7 +32,14 @@ export interface CreateRuleRequest {
   w_id: string[];
   raw_text: string;
   trigger_time?: string;
+  /** End time for "once" range or daily time span. */
+  trigger_time_end?: string;
+  /** Repeat interval in days (daily=1, weekly=7, etc.). */
   interval?: number;
+  /** Repeat every X minutes within time span (for daily etc.). */
+  interval_minutes?: number;
+  /** For "once": how many times to run in the window. */
+  run_count?: number;
   status?: RuleStatus;
   suggestion_id?: string;
 }
