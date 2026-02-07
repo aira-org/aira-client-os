@@ -1,19 +1,21 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { CATEGORIES } from '@/lib/constants';
 
 interface CategoryTabsProps {
   activeCategory: string;
   onCategoryChange: (category: string) => void;
+  counts?: Record<string, number>;
   className?: string;
 }
 
 export function CategoryTabs({
   activeCategory,
   onCategoryChange,
+  counts,
   className,
 }: CategoryTabsProps) {
   return (
@@ -25,6 +27,7 @@ export function CategoryTabs({
     >
       {CATEGORIES.map(category => {
         const isActive = activeCategory === category.id;
+        const count = counts?.[category.id];
 
         return (
           <button
@@ -44,7 +47,28 @@ export function CategoryTabs({
                 transition={{ type: 'spring', damping: 20, stiffness: 300 }}
               />
             )}
-            <span className="relative z-10">{category.label}</span>
+            <span className="relative z-10 flex items-center gap-1.5">
+              {category.label}
+              <AnimatePresence mode="wait">
+                {count !== undefined && count > 0 && (
+                  <motion.span
+                    key={count}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ type: 'spring', damping: 15, stiffness: 300 }}
+                    className={cn(
+                      'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold',
+                      isActive
+                        ? 'bg-primary-foreground/20 text-primary-foreground'
+                        : 'bg-muted text-muted-foreground',
+                    )}
+                  >
+                    {count}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </span>
           </button>
         );
       })}
