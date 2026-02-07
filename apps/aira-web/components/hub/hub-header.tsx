@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { ThemeSwitcher } from '@/components/ui/theme-switcher';
 import { UserMenu } from './user-menu';
 
 interface HubHeaderProps {
@@ -52,7 +53,10 @@ export function HubHeader({
               <p className="text-muted-foreground">{greeting}</p>
               <h1 className="text-2xl font-bold text-foreground">{userName}</h1>
             </div>
-            <UserMenu userName={userName} userAvatar={userAvatar} />
+            <div className="flex items-center gap-3">
+              <ThemeSwitcher className="shadow-md ring-1 ring-border/50" />
+              <UserMenu userName={userName} userAvatar={userAvatar} />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
