@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState, } from 'react';
 import { motion } from 'framer-motion';
 import { Copy, RefreshCw, Check, Info } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +14,7 @@ interface LinkCodeDisplayProps {
   onInfoClick?: () => void;
   isRefreshing?: boolean;
   className?: string;
+  onCopySuccess?: () => void;
 }
 
 export function LinkCodeDisplay({
@@ -21,6 +23,7 @@ export function LinkCodeDisplay({
   onInfoClick,
   isRefreshing = false,
   className,
+  onCopySuccess,
 }: LinkCodeDisplayProps) {
   const [copied, setCopied] = useState(false);
 
@@ -29,14 +32,18 @@ export function LinkCodeDisplay({
       await navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      if (onCopySuccess) {
+        onCopySuccess();
+      }
     } catch (err) {
       console.error('Failed to copy:', err);
     }
   };
-
+ 
   // Format code with spaces: 12345678 -> 1234 5678
   const formattedCode = code.slice(0, 4) + ' ' + code.slice(4);
-
+  
+  
   return (
     <Card className={cn('overflow-hidden', className)}>
       <CardContent className="p-6">

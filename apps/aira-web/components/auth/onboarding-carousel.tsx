@@ -1,6 +1,6 @@
 'use client';
-
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Zap, Shield, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';

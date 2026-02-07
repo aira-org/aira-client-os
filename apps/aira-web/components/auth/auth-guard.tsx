@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import * as React from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useIsAuthenticated, useIsAuthLoading, useUser } from '@repo/core';
 import { ROUTES } from '@/lib/constants';
@@ -13,6 +14,7 @@ interface AuthGuardProps {
 export function AuthGuard({ children, requireActive = true }: AuthGuardProps) {
   const router = useRouter();
   const isAuthenticated = useIsAuthenticated();
+  //const isAuthenticated = true;
   const isLoading = useIsAuthLoading();
   const { data: user, isLoading: isUserLoading } = useUser();
 

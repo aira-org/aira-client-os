@@ -1,9 +1,13 @@
-import React from 'react';
+
+import * as React from 'react';
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
 import '../src/lib/api';
 import { Providers } from './providers';
+import { HowToLinkDialog } from '@/components/whatsapp/how-to-link-dialog';
+
+
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -16,8 +20,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'AiRA - AI Rule Automation',
-  description: 'Intelligent automation for WhatsApp and connected services',
+ title: 'AiRA - AI Rule Automation',
+ description: 'Intelligent automation for WhatsApp and connected services', 
   icons: {
     icon: '/favicon.ico',
   },
@@ -28,7 +32,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   themeColor: '#010101',
-};
+}; 
 
 export default function RootLayout({
   children,
@@ -41,7 +45,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
       >
         <Providers>{children}</Providers>
+      
       </body>
     </html>
-  );
+  )
 }
