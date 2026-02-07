@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus } from 'lucide-react';
@@ -46,7 +46,7 @@ interface UIConnector {
   lastSync?: string;
 }
 
-export default function WorkspacePage() {
+function WorkspacePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') || 'rules';
@@ -467,5 +467,23 @@ export default function WorkspacePage() {
         )}
       </motion.div>
     </ScreenLayout>
+  );
+}
+
+function WorkspacePageFallback() {
+  return (
+    <ScreenLayout>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+      </div>
+    </ScreenLayout>
+  );
+}
+
+export default function WorkspacePage() {
+  return (
+    <Suspense fallback={<WorkspacePageFallback />}>
+      <WorkspacePageContent />
+    </Suspense>
   );
 }
