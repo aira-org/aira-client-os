@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { Suspense, useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -106,7 +106,7 @@ function detectKeywords(text: string): string[] {
   return matched.slice(0, 5);
 }
 
-export default function NewRulePage() {
+function NewRulePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -189,8 +189,11 @@ export default function NewRulePage() {
   });
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduleTime, setScheduleTime] = useState('09:00');
+  const [scheduleTimeEnd, setScheduleTimeEnd] = useState('17:00');
   const [scheduleInterval, setScheduleInterval] =
     useState<IntervalType>('none');
+  const [scheduleRunCount, setScheduleRunCount] = useState(1);
+  const [scheduleIntervalMinutes, setScheduleIntervalMinutes] = useState(0);
   const [showGroupPicker, setShowGroupPicker] = useState(false);
   const [groupSearchQuery, setGroupSearchQuery] = useState('');
   const suggestionId = searchParams.get('suggestion_id');
@@ -275,7 +278,15 @@ export default function NewRulePage() {
 
     if (scheduleEnabled) {
       ruleData.trigger_time = buildTriggerTimeUTC(scheduleTime);
+      if (scheduleTimeEnd?.trim()) {
+        ruleData.trigger_time_end = buildTriggerTimeUTC(scheduleTimeEnd);
+      }
       ruleData.interval = INTERVAL_TO_DAYS[scheduleInterval];
+      if (scheduleInterval === 'once') {
+        ruleData.run_count = scheduleRunCount;
+      } else if (scheduleIntervalMinutes > 0) {
+        ruleData.interval_minutes = scheduleIntervalMinutes;
+      }
     }
 
     createRule(ruleData, {
@@ -290,6 +301,9 @@ export default function NewRulePage() {
     scheduleEnabled,
     scheduleTime,
     scheduleInterval,
+    scheduleTimeEnd,
+    scheduleRunCount,
+    scheduleIntervalMinutes,
     createRule,
     router,
     suggestionId,
@@ -405,14 +419,20 @@ export default function NewRulePage() {
               onToggle={setScheduleEnabled}
               time={scheduleTime}
               onTimeChange={setScheduleTime}
+              timeEnd={scheduleTimeEnd}
+              onTimeEndChange={setScheduleTimeEnd}
               interval={scheduleInterval}
               onIntervalChange={setScheduleInterval}
+              runCount={scheduleRunCount}
+              onRunCountChange={setScheduleRunCount}
+              intervalMinutes={scheduleIntervalMinutes}
+              onIntervalMinutesChange={setScheduleIntervalMinutes}
             />
           </motion.div>
         </div>
 
         {/* Bottom Save Button */}
-        <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background px-5 py-4">
+        <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background px-5 py-4 w-1/2 mx-auto">
           <Button
             onClick={handleSave}
             disabled={!canSave}
@@ -464,5 +484,23 @@ export default function NewRulePage() {
         </DialogContent>
       </Dialog>
     </ScreenLayout>
+  );
+}
+
+function NewRulePageFallback() {
+  return (
+    <ScreenLayout maxWidth="lg" className="relative min-h-screen pb-24">
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+      </div>
+    </ScreenLayout>
+  );
+}
+
+export default function NewRulePage() {
+  return (
+    <Suspense fallback={<NewRulePageFallback />}>
+      <NewRulePageContent />
+    </Suspense>
   );
 }

@@ -2,6 +2,7 @@
   "extends": "@repo/typescript-config/nextjs.json",
   "exclude": [".next/dev/types/validator.ts"],
   "compilerOptions": {
+    "jsx": "react-jsx",
     "plugins": [
       {
         "name": "next"

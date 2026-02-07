@@ -26,7 +26,8 @@ export const webTokenStorage: TokenStorage = {
       const [name, value] = cookie.trim().split('=');
       // Check both backend cookie name and internal TOKEN_KEY
       if (name === BACKEND_COOKIE_NAME || name === TOKEN_KEY) {
-        return Promise.resolve(value || null);
+        const v = value?.trim();
+        if (v) return Promise.resolve(v);
       }
     }
     return Promise.resolve(null);

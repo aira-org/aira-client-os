@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { Suspense, useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Check, ListChecks, ListX, RefreshCw } from 'lucide-react';
@@ -264,7 +264,7 @@ function ListItem({
   );
 }
 
-export default function WhatsAppGroupSelectionPage() {
+function WhatsAppGroupSelectionPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const _source = searchParams.get('source') as ConnectionSource | null;
@@ -677,5 +677,23 @@ export default function WhatsAppGroupSelectionPage() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+function WhatsAppGroupSelectionPageFallback() {
+  return (
+    <ScreenLayout>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+      </div>
+    </ScreenLayout>
+  );
+}
+
+export default function WhatsAppGroupSelectionPage() {
+  return (
+    <Suspense fallback={<WhatsAppGroupSelectionPageFallback />}>
+      <WhatsAppGroupSelectionPageContent />
+    </Suspense>
   );
 }

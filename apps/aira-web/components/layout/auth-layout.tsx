@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { ThemeSwitcher } from '@/components/ui/theme-switcher';
 import { cn } from '@/lib/utils';
 
 interface AuthLayoutProps {
@@ -43,6 +44,11 @@ export function AuthLayout({
           </motion.div>
         )}
         {children}
+      </div>
+
+      {/* Floating theme switcher - bottom right */}
+      <div className="fixed bottom-6 right-6">
+        <ThemeSwitcher className="shadow-lg ring-1 ring-border/50" />
       </div>
     </div>
   );

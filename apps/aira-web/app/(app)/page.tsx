@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { Suspense, useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ScreenLayout } from '@/components/layout';
@@ -35,7 +35,7 @@ function formatRelativeTime(dateString: string): string {
   return `${diffDays}d ago`;
 }
 
-export default function HubPage() {
+function HubPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
@@ -315,5 +315,23 @@ export default function HubPage() {
         )}
       </motion.div>
     </ScreenLayout>
+  );
+}
+
+function HubPageFallback() {
+  return (
+    <ScreenLayout>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+      </div>
+    </ScreenLayout>
+  );
+}
+
+export default function HubPage() {
+  return (
+    <Suspense fallback={<HubPageFallback />}>
+      <HubPageContent />
+    </Suspense>
   );
 }
