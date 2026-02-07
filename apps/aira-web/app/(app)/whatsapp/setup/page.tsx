@@ -98,6 +98,18 @@ export default function WhatsAppSetupPage() {
   const [showHowTo, setShowHowTo] = React.useState(false);
   const [copied, setCopied] = useState(false);
   const hasCalledConnect = useRef(false);
+  const EXPIRY_TIME = 5 * 60 * 1000;
+
+  const [expiresAt, setExpiresAt] = useState(() => {
+    return Date.now() + EXPIRY_TIME;
+  });
+
+  const [now, setNow] = useState(Date.now());
+
+  const remainingTime = Math.max(0, Math.floor((expiresAt - now) / 1000));
+
+  const minutes = Math.floor(remainingTime / 60);
+  const seconds = remainingTime % 60;
 
   // Connect mutation
   const { mutate: connect } = useWahaConnect();
@@ -167,6 +179,14 @@ export default function WhatsAppSetupPage() {
   const code = linkCode ?? '';
   const formattedCode = code ? `${code.slice(0, 4)} ${code.slice(4)}` : '';
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <ScreenLayout maxWidth="md" className="py-4 h-screen" padded={false}>
       <div className="px-4  flex flex-col h-full">
@@ -231,9 +251,16 @@ export default function WhatsAppSetupPage() {
                 }}
                 className="h-1.5 w-1.5 rounded-full bg-primary"
               />
-              <p className="text-xs text-muted-foreground">
-                Code expires in 5 minutes
-              </p>
+              {remainingTime > 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Code expires in {minutes}:
+                  {seconds.toString().padStart(2, '0')}
+                </p>
+              ) : (
+                <p className="text-xs text-red-700">
+                  Code expired! Try New Code
+                </p>
+              )}
             </div>
           </motion.div>
 
