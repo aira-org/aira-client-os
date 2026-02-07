@@ -2,9 +2,9 @@
 
 import { useEffect } from 'react';
 import { QueryClientProvider, queryClient } from '@repo/core';
+import { ToastProvider } from '@/components/ui/toast';
 import { verifyAuthState } from '@/lib/api';
 
-// Initialize API client on module load
 import '@/lib/api';
 
 interface ProvidersProps {
@@ -12,13 +12,13 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
-  // Verify auth state on mount by calling /users/me API
-  // This works with HttpOnly cookies since browser sends them automatically
   useEffect(() => {
     verifyAuthState();
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>{children}</ToastProvider>
+    </QueryClientProvider>
   );
 }
