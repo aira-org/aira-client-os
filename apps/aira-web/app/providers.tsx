@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useEffect } from 'react';
 import { QueryClientProvider, queryClient } from '@repo/core';
 import { verifyAuthState } from '@/lib/api';

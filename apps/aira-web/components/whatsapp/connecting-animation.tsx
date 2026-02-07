@@ -1,6 +1,5 @@
 'use client';
-
-import React from 'react';
+import * as React from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';

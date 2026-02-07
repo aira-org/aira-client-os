@@ -1,6 +1,7 @@
 'use client';
 
-import React, { Suspense, useEffect, useRef, useState } from 'react';
+import * as React from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { AuthLayout } from '@/components/layout';

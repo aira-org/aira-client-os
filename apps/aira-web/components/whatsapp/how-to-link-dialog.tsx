@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings,
@@ -58,7 +59,8 @@ export function HowToLinkDialog({ open, onOpenChange }: HowToLinkDialogProps) {
       setCurrentStep(currentStep - 1);
     }
   };
-
+ 
+  
   const step = steps[currentStep];
   const Icon = step.icon;
 
@@ -69,7 +71,7 @@ export function HowToLinkDialog({ open, onOpenChange }: HowToLinkDialogProps) {
           <SheetTitle className="text-center">How to Link WhatsApp</SheetTitle>
         </SheetHeader>
 
-        <div className="py-6">
+        <div className="pt-0 pb-6">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -95,6 +97,16 @@ export function HowToLinkDialog({ open, onOpenChange }: HowToLinkDialogProps) {
               <p className="mt-2 text-muted-foreground">{step.description}</p>
             </motion.div>
           </AnimatePresence>
+        </div>
+
+        {/* Progress bar */}
+        <div className="mb-4 h-1 w-full bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-full bg-whatsapp transition-all duration-500"
+            style={{
+              width: `${((currentStep + 1) / steps.length) * 100}%`,
+            }}
+          />
         </div>
 
         {/* Progress dots */}

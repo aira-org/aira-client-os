@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import * as React from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Copy, RefreshCw, Check, Info } from 'lucide-react';
@@ -103,7 +104,8 @@ export default function WhatsAppSetupPage() {
   const { mutate: connect } = useWahaConnect();
 
   // Get link code from store (set by connect mutation)
-  const linkCode = useWahaLinkCode();
+  const mockLinkCode = useWahaLinkCode();
+  //const mockLinkCode = "6R9B-Q71E";
 
   const isWahaConnected = useIsWahaConnected();
 
@@ -132,13 +134,13 @@ export default function WhatsAppSetupPage() {
   }, [showToast, router]);
 
   useEffect(() => {
-    if (!hasCalledConnect.current && !linkCode && !isWahaConnected) {
+    if (!hasCalledConnect.current && !mockLinkCode && !isWahaConnected) {
       hasCalledConnect.current = true;
       connect(undefined, {
         onError: handleConnectError,
       });
     }
-  }, [connect, linkCode, isWahaConnected, handleConnectError]);
+  }, [connect, mockLinkCode, isWahaConnected, handleConnectError]);
 
   useEffect(() => {
     if (isWahaConnected) {
@@ -154,9 +156,9 @@ export default function WhatsAppSetupPage() {
   };
 
   const handleCopy = async () => {
-    if (!linkCode) return;
+    if (!mockLinkCode) return;
     try {
-      await navigator.clipboard.writeText(linkCode);
+      await navigator.clipboard.writeText(mockLinkCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -164,8 +166,31 @@ export default function WhatsAppSetupPage() {
     }
   };
 
-  const code = linkCode ?? '';
+  const code = mockLinkCode ?? '';
   const formattedCode = code ? `${code.slice(0, 4)} ${code.slice(4)}` : '';
+
+   // 5 minutes
+  const [timeLeft, setTimeLeft] = useState(300);
+
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+    
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+  
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+  
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+  
+    return `${minutes.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
+  };
+  
 
   return (
     <ScreenLayout maxWidth="md" className="py-4 h-screen" padded={false}>
@@ -203,9 +228,9 @@ export default function WhatsAppSetupPage() {
 
             {/* Code Display */}
             <div className="mb-4 min-h-[48px]">
-              {linkCode ? (
+              {mockLinkCode ? (
                 <motion.p
-                  key={linkCode}
+                  key={mockLinkCode}
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   className="font-mono text-4xl font-bold tracking-[0.2em] text-foreground"
@@ -231,10 +256,12 @@ export default function WhatsAppSetupPage() {
                 }}
                 className="h-1.5 w-1.5 rounded-full bg-primary"
               />
-              <p className="text-xs text-muted-foreground">
-                Code expires in 5 minutes
-              </p>
+              <p className="text-sm text-muted-foreground">
+              Code expires in {formatTime(timeLeft)}
+            </p>
             </div>
+
+            
           </motion.div>
 
           {/* Details Grid */}
@@ -281,7 +308,7 @@ export default function WhatsAppSetupPage() {
                 )
               }
               label={copied ? 'Copied!' : 'Copy Code'}
-              disabled={!linkCode}
+              disabled={!mockLinkCode}
             />
 
             <div className="h-6 w-px bg-border" />
@@ -326,7 +353,7 @@ export default function WhatsAppSetupPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
-            className="flex items-center justify-center gap-2 pb-6 text-xs text-muted-foreground"
+            className="flex items-center justify-center gap-2 pb-4 text-xs text-muted-foreground"
           >
             <button className="underline hover:text-foreground">
               Terms and Conditions
