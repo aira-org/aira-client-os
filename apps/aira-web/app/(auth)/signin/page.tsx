@@ -9,19 +9,34 @@ import { GOOGLE_AUTH_URL } from '@/lib/api';
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // const handleGoogleSignIn = async () => {
+  //   setIsLoading(true);
+
+  //   // Redirect to Google OAuth URL with web state
+  //   const authUrl = `${GOOGLE_AUTH_URL}?state=auth:web`;
+
+  //   if (GOOGLE_AUTH_URL) {
+  //     window.location.href = authUrl;
+  //   } else {
+  //     console.error('GOOGLE_AUTH_URL is not configured');
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const handleGoogleSignIn = async () => {
+    if (!GOOGLE_AUTH_URL) {
+      setError(
+        'Google Sign-In is currently unavailable. Please try again later',
+      );
+      return;
+    }
+
     setIsLoading(true);
 
-    // Redirect to Google OAuth URL with web state
     const authUrl = `${GOOGLE_AUTH_URL}?state=auth:web`;
-
-    if (GOOGLE_AUTH_URL) {
-      window.location.href = authUrl;
-    } else {
-      console.error('GOOGLE_AUTH_URL is not configured');
-      setIsLoading(false);
-    }
+    window.location.href = authUrl;
   };
 
   return (
@@ -34,6 +49,10 @@ export default function SignInPage() {
       >
         {/* Description */}
         <div className="text-center"></div>
+
+        {error && (
+          <p className="mt-2  text-sm text-center text-red-500">{error}</p>
+        )}
 
         {/* OAuth Buttons */}
         <OAuthButtons

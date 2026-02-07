@@ -11,12 +11,16 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, requireActive = true }: AuthGuardProps) {
+  const BYPASS_AUTH = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true';
+
   const router = useRouter();
   const isAuthenticated = useIsAuthenticated();
   const isLoading = useIsAuthLoading();
   const { data: user, isLoading: isUserLoading } = useUser();
 
   useEffect(() => {
+    if (BYPASS_AUTH) return;
+
     // Wait for auth state to load
     if (isLoading) return;
 
@@ -33,7 +37,7 @@ export function AuthGuard({ children, requireActive = true }: AuthGuardProps) {
   }, [isAuthenticated, isLoading, user, isUserLoading, requireActive, router]);
 
   // Show nothing while checking auth
-  if (isLoading || (!isAuthenticated && !isLoading)) {
+  if ((!BYPASS_AUTH && isLoading) || (!isAuthenticated && !isLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
@@ -42,7 +46,7 @@ export function AuthGuard({ children, requireActive = true }: AuthGuardProps) {
   }
 
   // Show loading while checking user status
-  if (requireActive && isUserLoading) {
+  if (!BYPASS_AUTH && requireActive && isUserLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
