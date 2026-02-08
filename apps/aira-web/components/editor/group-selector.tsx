@@ -1,10 +1,9 @@
 'use client';
 
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Check, Users } from 'lucide-react';
 
 interface Group {
   id: string;

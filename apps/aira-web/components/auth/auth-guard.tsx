@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useIsAuthenticated, useIsAuthLoading, useUser } from '@repo/core';
 import { ROUTES } from '@/lib/constants';
+import { useIsAuthenticated, useIsAuthLoading, useUser } from '@repo/core';
+import { usePathname, useRouter } from 'next/navigation';
+import React, { useEffect } from 'react';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -12,28 +12,46 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children, requireActive = true }: AuthGuardProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  
   const isAuthenticated = useIsAuthenticated();
-  const isLoading = useIsAuthLoading();
+  const isAuthLoading = useIsAuthLoading();
   const { data: user, isLoading: isUserLoading } = useUser();
 
-  useEffect(() => {
-    // Wait for auth state to load
-    if (isLoading) return;
+  // Consolidate loading states to prevent UI flickering
+  const checkingAuth = isAuthLoading;
+  const checkingStatus = requireActive && isUserLoading;
 
-    // Redirect to signin if not authenticated
+  useEffect(() => {
+    if (checkingAuth) return;
+
+    // 1. Handle Unauthenticated
     if (!isAuthenticated) {
-      router.replace(ROUTES.SIGNIN);
+      if (pathname !== ROUTES.SIGNIN) {
+        router.replace(ROUTES.SIGNIN);
+      }
       return;
     }
 
-    // If we require active user, check user status
+    // 2. Handle Inactive User (Phone Verification)
+    // Only redirect if they aren't already on the phone page to prevent loops
     if (requireActive && !isUserLoading && user && !user.is_active) {
-      router.replace(ROUTES.PHONE);
+      if (pathname !== ROUTES.PHONE) {
+        router.replace(ROUTES.PHONE);
+      }
     }
-  }, [isAuthenticated, isLoading, user, isUserLoading, requireActive, router]);
+  }, [
+    isAuthenticated, 
+    checkingAuth, 
+    user?.is_active, 
+    isUserLoading, 
+    requireActive, 
+    router, 
+    pathname
+  ]);
 
-  // Show nothing while checking auth
-  if (isLoading || (!isAuthenticated && !isLoading)) {
+  // Show a single consistent loader for any blocking state
+  if (checkingAuth || checkingStatus) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
@@ -41,14 +59,9 @@ export function AuthGuard({ children, requireActive = true }: AuthGuardProps) {
     );
   }
 
-  // Show loading while checking user status
-  if (requireActive && isUserLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
-      </div>
-    );
-  }
+  // Safety: Prevent rendering children if we know a redirect should be happening
+  if (!isAuthenticated && pathname !== ROUTES.SIGNIN) return null;
+  if (requireActive && user && !user.is_active && pathname !== ROUTES.PHONE) return null;
 
   return <>{children}</>;
 }

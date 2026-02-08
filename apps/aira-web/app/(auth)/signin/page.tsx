@@ -1,17 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { AuthLayout } from '@/components/layout';
 import { OAuthButtons } from '@/components/auth/oauth-buttons';
+import { AuthLayout } from '@/components/layout';
 import { GOOGLE_AUTH_URL } from '@/lib/api';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { useState } from 'react';
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
+    useEffect(() => 
+      {
+     const result = hydrateAuthState().catch(error => {
+      console.error('Error hydrating auth state:', error);
+    });
+    if (result) {
+      navigate.push('/'); 
+    }
+  }, []);
 
     // Redirect to Google OAuth URL with web state
     const authUrl = `${GOOGLE_AUTH_URL}?state=auth:web`;
