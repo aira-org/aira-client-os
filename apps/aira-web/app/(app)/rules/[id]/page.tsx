@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   ChevronLeft,
@@ -12,6 +12,7 @@ import {
   Users,
   Clock,
   Search,
+  Plus,
 } from 'lucide-react';
 import { ScreenLayout } from '@/components/layout';
 import { Textarea } from '@/components/ui/textarea';
@@ -144,7 +145,7 @@ interface EditRuleFormProps {
 
 function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
   const router = useRouter();
-
+  const searchParams = useSearchParams();
   // Mutations
   const { mutate: updateRule, isPending: isUpdating } = useUpdateRule();
   const { mutate: deleteRule, isPending: isDeleting } = useDeleteRule();
@@ -168,7 +169,9 @@ function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
       : 'none',
   );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showGroupPicker, setShowGroupPicker] = useState(false);
+  const [showGroupPicker, setShowGroupPicker] = useState(() =>
+    searchParams.has('select-group'),
+  );
   const [groupSearchQuery, setGroupSearchQuery] = useState('');
 
   // Derived state
@@ -425,9 +428,13 @@ function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
               label="WhatsApp Groups & Chats"
             />
           </div>
-          <div className="flex justify-end pt-4">
-            <Button onClick={() => setShowGroupPicker(false)}>
-              Done ({selectedGroups.length} selected)
+          <div className="flex justify-between pt-4">
+            <Button
+              onClick={() =>
+                `${ROUTES.WHATSAPP_GROUP_SELECTION}?from=edit-rule&ruleId=${rule.rule_id}`
+              }
+            >
+              <Plus /> Add More
             </Button>
           </div>
         </DialogContent>
@@ -469,7 +476,6 @@ export default function EditRulePage() {
   const router = useRouter();
   const params = useParams();
   const ruleId = params.id as string;
-
   // Fetch all rules and find the one we're editing
   const { data: rules, isLoading: isLoadingRules } = useRules();
   const rule = useMemo(
