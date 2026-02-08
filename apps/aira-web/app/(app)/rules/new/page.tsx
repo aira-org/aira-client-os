@@ -11,6 +11,7 @@ import {
   Users,
   Clock,
   Search,
+  Plus,
 } from 'lucide-react';
 import { ScreenLayout } from '@/components/layout';
 import { Textarea } from '@/components/ui/textarea';
@@ -191,7 +192,9 @@ export default function NewRulePage() {
   const [scheduleTime, setScheduleTime] = useState('09:00');
   const [scheduleInterval, setScheduleInterval] =
     useState<IntervalType>('none');
-  const [showGroupPicker, setShowGroupPicker] = useState(false);
+  const [showGroupPicker, setShowGroupPicker] = useState(() =>
+    searchParams.has('select-group'),
+  );
   const [groupSearchQuery, setGroupSearchQuery] = useState('');
   const suggestionId = searchParams.get('suggestion_id');
 
@@ -456,7 +459,17 @@ export default function NewRulePage() {
               label="WhatsApp Groups & Chats"
             />
           </div>
-          <div className="flex justify-end pt-4">
+
+          <div className="flex justify-between pt-4">
+            <Button
+              onClick={() =>
+                router.push(
+                  `${ROUTES.WHATSAPP_GROUP_SELECTION}?from=new-rule&suggestion=${rawText}`,
+                )
+              }
+            >
+              <Plus /> Add More
+            </Button>
             <Button onClick={() => setShowGroupPicker(false)}>
               Done ({selectedGroups.length} selected)
             </Button>
