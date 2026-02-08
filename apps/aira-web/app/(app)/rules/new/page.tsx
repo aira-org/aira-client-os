@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { CreateRuleRequest } from '../../../../../../packages/core/src/schemas';
 
@@ -109,6 +110,7 @@ function detectKeywords(text: string): string[] {
 export default function NewRulePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { showToast } = useToast();
 
   // Fetch connectors status
   const { data: connectorsData } = useConnectors();
@@ -218,9 +220,11 @@ export default function NewRulePage() {
     );
   }, [groups, groupSearchQuery]);
 
+  const hasTarget = selectedGroups.length > 0;
+
   const canSave =
     rawText.trim().length > 0 &&
-    (showGroupSelector ? selectedGroups.length > 0 : true) &&
+    hasTarget &&
     (scheduleEnabled ? scheduleInterval !== 'none' : true) &&
     !isCreating;
 
@@ -264,12 +268,22 @@ export default function NewRulePage() {
   );
 
   const handleSave = useCallback(() => {
+    
+    if (!hasTarget) {
+      showToast('Please select at least one chat or group', 'error');
+      return;
+    }
+
     if (!canSave) return;
 
     const ruleData: CreateRuleRequest = {
-      w_id: selectedGroups,
       raw_text: rawText,
       status: 'active',
+      ...(selectedGroups.length === 1
+        ? { chat_id: selectedGroups[0] }
+        : selectedGroups.length > 1
+          ? { w_id: selectedGroups }
+          : {}),
       ...(suggestionId && { suggestion_id: suggestionId }),
     };
 
@@ -280,7 +294,13 @@ export default function NewRulePage() {
 
     createRule(ruleData, {
       onSuccess: () => {
+        showToast('Rule created successfully!', 'success');
         router.back();
+      },
+      onError: (error: Error) => {
+        console.error('[Rule Creation] Error:', error);
+        const errorMessage = error.message || 'Failed to create rule';
+        showToast(errorMessage, 'error');
       },
     });
   }, [
@@ -293,6 +313,7 @@ export default function NewRulePage() {
     createRule,
     router,
     suggestionId,
+    showToast,
   ]);
 
   return (
