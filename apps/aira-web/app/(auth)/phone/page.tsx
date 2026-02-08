@@ -79,9 +79,7 @@ export default function PhonePage() {
               <p className="mt-2 text-muted-foreground">
                 AiRA needs your phone number to get started
               </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Start with your country code (e.g., +1, +91)
-              </p>
+             
             </div>
 
             {/* Assistant Avatar - visible on larger screens */}

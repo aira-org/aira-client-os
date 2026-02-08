@@ -243,6 +243,7 @@ export default function HubPage() {
 
   // Get user's first name or fallback to 'there'
   const userName = user?.f_n || 'there';
+const suggestionCount = 2
 
   return (
     <ScreenLayout maxWidth="xl" className="py-6">
@@ -275,6 +276,7 @@ export default function HubPage() {
         {/* Category Tabs */}
         <CategoryTabs
           activeCategory={activeTab}
+            suggestionCount={suggestionCount}
           onCategoryChange={handleTabChange}
         />
 

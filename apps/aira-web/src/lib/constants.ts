@@ -99,3 +99,73 @@ export const ROUTES = {
   WHATSAPP_SUGGESTIONS: '/whatsapp/suggestions',
   WHATSAPP_RULES_CHAT_PICKER: '/whatsapp/rules-chat-picker',
 } as const;
+
+
+type Rule = {
+  title?:string;
+  rule_id: string;
+  raw_text: string;
+  w_id: string[];
+  status: 'active' | 'inactive';
+  trigger_time?: string | null;
+  interval?: number | null;
+  is_default: boolean;
+};
+
+export const MOCK_RULES: Rule[] = [
+  {
+    rule_id: 'rule_001',
+    title: 'Morning WhatsApp Reminder',
+    raw_text:
+      'Send a WhatsApp message to all project groups every weekday at 9 AM',
+    w_id: ['group_alpha', 'group_beta'],
+    status: 'active',
+    trigger_time: new Date().toISOString(),
+    interval: 1, // daily
+    is_default: false,
+  },
+  {
+    rule_id: 'rule_002',
+    title: 'Auto Calendar Event from Email',
+    raw_text:
+      'Create a Google Calendar event when a meeting email is received',
+    w_id: [],
+    status: 'active',
+    trigger_time: null,
+    interval: null,
+    is_default: true,
+  },
+  {
+    rule_id: 'rule_003',
+    title: 'Weekly File Backup to Drive',
+    raw_text:
+      'Upload files from WhatsApp to Google Drive every Friday evening',
+    w_id: ['group_files'],
+    status: 'inactive',
+    trigger_time: new Date(new Date().setHours(18, 0, 0, 0)).toISOString(),
+    interval: 7, // weekly
+    is_default: false,
+  },
+  {
+    rule_id: 'rule_004',
+    title: 'Monthly Email Report',
+    raw_text:
+      'Send a monthly report email with attachments from Drive folders',
+    w_id: [],
+    status: 'active',
+    trigger_time: new Date().toISOString(),
+    interval: 30, // monthly
+    is_default: false,
+  },
+  {
+    rule_id: 'rule_005',
+    title: 'Daily Standup Reminder',
+    raw_text:
+      'Post daily reminders in WhatsApp standup group about pending tasks',
+    w_id: ['group_standup'],
+    status: 'active',
+    trigger_time: new Date(new Date().setHours(10, 30, 0, 0)).toISOString(),
+    interval: 1, // daily
+    is_default: false,
+  },
+];

@@ -1,10 +1,25 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, {  useMemo } from 'react';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+// Expanded country list
+const COUNTRIES = [
+  { code: '+1', name: 'US', flag: '🇺🇸' },
+  { code: '+91', name: 'IN', flag: '🇮🇳' },
+  { code: '+44', name: 'GB', flag: '🇬🇧' },
+  { code: '+61', name: 'AU', flag: '🇦🇺' },
+  { code: '+49', name: 'DE', flag: '🇩🇪' },
+  { code: '+33', name: 'FR', flag: '🇫🇷' },
+];
 
 interface PhoneInputProps {
   value: string;
@@ -12,66 +27,52 @@ interface PhoneInputProps {
   className?: string;
 }
 
-// Simple country detection based on phone number prefix
-const detectCountry = (
-  phone: string,
-): { code: string; name: string } | null => {
-  const cleaned = phone.replace(/\D/g, '');
-  if (cleaned.startsWith('91') && cleaned.length >= 4) {
-    return { code: '+91', name: 'India' };
-  }
-  if (cleaned.startsWith('1') && cleaned.length >= 4) {
-    return { code: '+1', name: 'USA' };
-  }
-  if (cleaned.startsWith('44') && cleaned.length >= 4) {
-    return { code: '+44', name: 'UK' };
-  }
-  if (cleaned.startsWith('61') && cleaned.length >= 4) {
-    return { code: '+61', name: 'Australia' };
-  }
-  return null;
-};
-
 export function PhoneInput({ value, onChange, className }: PhoneInputProps) {
-  const country = useMemo(() => detectCountry(value), [value]);
-  const [isFocused, setIsFocused] = useState(false);
+  // Extract code and number from the existing value
+  // We assume the value is stored as "+1234567890"
+  const selectedCountry = useMemo(() => {
+    return COUNTRIES.find(c => value.startsWith(c.code)) || COUNTRIES[0];
+  }, [value]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only allow numbers and basic formatting
-    const newValue = e.target.value.replace(/[^\d+\-\s()]/g, '');
-    onChange(newValue);
+  const phoneNumber = value.replace(selectedCountry?.code || '', '');
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawNumber = e.target.value.replace(/\D/g, '');
+    onChange(`${selectedCountry?.code}${rawNumber}`);
+  };
+
+  const handleCountryChange = (newCode: string) => {
+    const rawNumber = value.replace(selectedCountry?.code || '', '');
+    onChange(`${newCode}${rawNumber}`);
   };
 
   return (
-    <div className={cn('relative', className)}>
-      <Input
-        type="tel"
-        value={value}
-        onChange={handleChange}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        placeholder="+1 (555) 000-0000"
-        className={cn(
-          'h-14 text-lg transition-all',
-          isFocused && 'ring-2 ring-primary',
-        )}
-      />
+    <div className={cn('flex gap-2 items-center justify-center', className)}>
+      <Select value={selectedCountry?.code} onValueChange={handleCountryChange}>
+        <SelectTrigger className="w-25 text-lg h-14! bg-card! rounded-xl!">
+          <SelectValue placeholder="Code" />
+        </SelectTrigger>
+        <SelectContent>
+          {COUNTRIES.map((c) => (
+            <SelectItem key={c.code} value={c.code}>
+              <span className="flex items-center gap-2">
+                <span>{c.flag}</span>
+                <span>{c.code}</span>
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-      {/* Country Badge */}
-      <AnimatePresence>
-        {country && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 10 }}
-            className="absolute -top-3 left-4"
-          >
-            <Badge variant="secondary" className="text-xs">
-              {country.code} {country.name}
-            </Badge>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="relative flex-1">
+        <Input
+          type="tel"
+          value={phoneNumber}
+          onChange={handlePhoneChange}
+          placeholder="555-0000"
+          className="h-14 text-lg transition-all"
+        />
+      </div>
     </div>
   );
 }

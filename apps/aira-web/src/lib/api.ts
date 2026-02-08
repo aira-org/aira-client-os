@@ -1,8 +1,7 @@
 import { initApiClient, getApiClient, TOKEN_KEY, authStore } from '@repo/core';
 import type { TokenStorage, User } from '@repo/core';
 
-const baseURL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || '';
+const baseURL ='http://localhost:3000';
 
 if (!baseURL) {
   throw new Error(

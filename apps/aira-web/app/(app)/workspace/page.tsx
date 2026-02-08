@@ -12,11 +12,10 @@ import {
   EmptyState,
   RuleItem,
 } from '@/components/workspace';
-import { ROUTES } from '@/lib/constants';
+import { MOCK_RULES, ROUTES } from '@/lib/constants';
 import {
   useConnectors,
   useConnectConnector,
-  useRules,
   useUpdateRule,
   useWahaDisconnect,
   useDisconnectConnector,
@@ -70,12 +69,9 @@ export default function WorkspacePage() {
     useConnectors();
 
   // Fetch rules
-  const {
-    data: rulesData,
-    isLoading: isLoadingRules,
-    refetch: refetchRules,
-  } = useRules();
-
+ const rulesData = MOCK_RULES;
+ const isLoadingRules =false;
+ const refetchRules =()=>{};
   // Update rule mutation (for toggle)
   const { mutate: updateRule } = useUpdateRule();
 
@@ -245,7 +241,7 @@ export default function WorkspacePage() {
                 exit={{ opacity: 0, x: 20 }}
                 className="space-y-6"
               >
-                {rulesData && rulesData.length > 0 && (
+                {/* {rulesData && rulesData.length > 0 && (
                   <div className="flex items-center justify-between">
                     <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       All Rules
@@ -257,7 +253,7 @@ export default function WorkspacePage() {
                       </Button>
                     </Link>
                   </div>
-                )}
+                )} */}
 
                 {rulesData && rulesData.length > 0 ? (
                   <div className="space-y-3">
@@ -270,10 +266,7 @@ export default function WorkspacePage() {
                       >
                         <RuleItem
                           id={rule.rule_id}
-                          title={
-                            rule.raw_text.slice(0, 50) +
-                            (rule.raw_text.length > 50 ? '...' : '')
-                          }
+                          title={rule.title||rule.raw_text}
                           description={rule.raw_text}
                           connectorType="whatsapp"
                           isEnabled={rule.status === 'active'}

@@ -180,6 +180,9 @@ export default function NewRulePage() {
   const [rawText, setRawText] = useState(
     () => searchParams.get('suggestion') ?? '',
   );
+  const [title, setTitle] = useState(
+  () => searchParams.get('title') ?? ''
+);
   const [selectedGroups, setSelectedGroups] = useState<string[]>(() => {
     const chatIds = searchParams.get('chatIds');
     const chatId = searchParams.get('chatId');
@@ -270,6 +273,7 @@ export default function NewRulePage() {
       w_id: selectedGroups,
       raw_text: rawText,
       status: 'active',
+     title:title,
       ...(suggestionId && { suggestion_id: suggestionId }),
     };
 
@@ -286,6 +290,7 @@ export default function NewRulePage() {
   }, [
     canSave,
     rawText,
+    title,
     selectedGroups,
     scheduleEnabled,
     scheduleTime,
@@ -317,6 +322,22 @@ export default function NewRulePage() {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-5 pb-6 pt-4">
+          <motion.div
+  initial={{ opacity: 0, y: 10 }}
+  animate={{ opacity: 1, y: 0 }}
+>
+  <SectionHeader
+    title="Title (optional)"
+    icon={<FileText className="h-4.5 w-4.5 text-primary" />}
+  />
+  <Input
+    value={title}
+    onChange={e => setTitle(e.target.value)}
+    placeholder="Short name for this rule"
+    maxLength={60}
+  />
+</motion.div>
+
           {/* Rule Instruction */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
