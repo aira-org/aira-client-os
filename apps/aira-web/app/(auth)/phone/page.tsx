@@ -11,30 +11,25 @@ import { useUpdateUser, useAuthActions, queryClient } from '@repo/core';
 import { webTokenStorage } from '@/lib/api';
 import { ROUTES } from '@/lib/constants';
 
+
+
 export default function PhonePage() {
   const router = useRouter();
-  const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('+1');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
   const { logout } = useAuthActions();
 
-  const cleanedPhone = phone.replace(/\D/g, '');
-  const isValidPhone = cleanedPhone.length >= 8 && cleanedPhone.length <= 15;
-
-  const formatPhoneNumber = (input: string): string => {
-    const cleaned = input.replace(/\D/g, '');
-    if (!cleaned) return '';
-    if (cleaned.length <= 3) return `${cleaned}`;
-    const formatted = cleaned.replace(/(\d{3})(?=\d)/g, '$1 ');
-    return `${formatted}`;
-  };
+  const isValidPhone = phoneNumber.length >= 7 && phoneNumber.length <= 15;
 
   const handleContinue = async () => {
     if (!isValidPhone || isUpdating) return;
 
-    const formattedPhone = formatPhoneNumber(phone);
+    // Combine country code and phone number
+    const fullPhone = `${countryCode}${phoneNumber.replace(/\D/g, '')}`;
 
     updateUser(
-      { p_n: formattedPhone.replace(/\s+/g, '') },
+      { p_n: fullPhone },
       {
         onSuccess: () => {
           // User is now active, redirect to hub
@@ -59,7 +54,7 @@ export default function PhonePage() {
         {/* Logout button */}
         <button
           onClick={handleLogout}
-          className="absolute -top-16 right-0 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          className="absolute -top-16 right-0 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <LogOut className="h-4 w-4" />
           <span>Logout</span>
@@ -77,10 +72,7 @@ export default function PhonePage() {
                 You&apos;re in!
               </h1>
               <p className="mt-2 text-muted-foreground">
-                AiRA needs your phone number to get started
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Start with your country code (e.g., +1, +91)
+                AiRA needs your phone number to get started.
               </p>
             </div>
 
@@ -91,27 +83,34 @@ export default function PhonePage() {
           </div>
 
           {/* Phone Input */}
-          <PhoneInput value={phone} onChange={setPhone} />
+          <div className="space-y-4">
+            <PhoneInput
+              countryCode={countryCode}
+              phoneNumber={phoneNumber}
+              onCountryChange={setCountryCode}
+              onPhoneChange={setPhoneNumber}
+              disabled={isUpdating}
+            />
+            
+            {/* Mobile Avatar */}
+            <div className="flex justify-center md:hidden py-4">
+              <AssistantAvatar size="lg" />
+            </div>
 
-          {/* Mobile Avatar */}
-          <div className="flex justify-center md:hidden">
-            <AssistantAvatar size="lg" />
+            <Button
+              onClick={handleContinue}
+              disabled={!isValidPhone || isUpdating}
+              size="default"
+              className="w-full h-12 text-base"
+            >
+              {isUpdating ? 'Verifying...' : 'Continue'}
+            </Button>
+            
+            <p className="text-center text-xs text-muted-foreground">
+              We&apos;ll send a verification code to this number. 
+              Standard message rates may apply.
+            </p>
           </div>
-
-          {/* Continue Button */}
-          <Button
-            onClick={handleContinue}
-            disabled={!isValidPhone || isUpdating}
-            size="default"
-            className="w-full"
-          >
-            {isUpdating ? 'Verifying...' : 'Continue'}
-          </Button>
-
-          {/* Info text */}
-          <p className="text-center text-xs text-muted-foreground">
-            Your phone number will be used for account verification
-          </p>
         </motion.div>
       </div>
     </AuthLayout>
