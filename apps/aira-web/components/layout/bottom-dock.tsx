@@ -32,7 +32,7 @@ export function BottomDock({ className }: BottomDockProps) {
   return (
     <div
       className={cn(
-        'fixed bottom-10 left-0 right-0 z-50 flex items-center justify-center pb-4 md:pb-6',
+        'fixed md:static md:flex  bottom-10 left-0 right-0 z-50 flex items-center justify-center md:justify-start pb-4 md:pb-0',
         className,
       )}
     >

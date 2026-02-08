@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ScreenLayout } from '@/components/layout';
+import { BottomDock, ScreenLayout } from '@/components/layout';
 import {
   HubHeader,
   CategoryTabs,
@@ -22,6 +22,8 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/lib/constants';
 
+const VISIBLE_DOCK_ROUTES = ['/', '/workspace'];
+
 function formatRelativeTime(dateString: string): string {
   const now = Date.now();
   const date = new Date(dateString).getTime();
@@ -37,6 +39,7 @@ function formatRelativeTime(dateString: string): string {
 
 export default function HubPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -121,12 +124,12 @@ export default function HubPage() {
       attachments: Array<
         | { id: string; type: 'image'; file: File; preview: string }
         | {
-            id: string;
-            type: 'audio';
-            file: File;
-            url: string;
-            duration: number;
-          }
+          id: string;
+          type: 'audio';
+          file: File;
+          url: string;
+          duration: number;
+        }
       >,
     ) => {
       // Find image and audio attachments
@@ -135,12 +138,12 @@ export default function HubPage() {
         | undefined;
       const audioAttachment = attachments.find(a => a.type === 'audio') as
         | {
-            id: string;
-            type: 'audio';
-            file: File;
-            url: string;
-            duration: number;
-          }
+          id: string;
+          type: 'audio';
+          file: File;
+          url: string;
+          duration: number;
+        }
         | undefined;
 
       submitTask(
@@ -241,6 +244,14 @@ export default function HubPage() {
     [suggestions, router],
   );
 
+
+
+  const shouldShowDock = VISIBLE_DOCK_ROUTES.some(
+    route =>
+      pathname === route || (route !== '/' && pathname.startsWith(route)),
+  );
+
+
   // Get user's first name or fallback to 'there'
   const userName = user?.f_n || 'there';
 
@@ -249,9 +260,11 @@ export default function HubPage() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="space-y-6"
+        className="space-y-6 h-full"
       >
         {/* Header */}
+
+
         <HubHeader
           userName={userName}
           searchQuery={searchQuery}
@@ -261,8 +274,9 @@ export default function HubPage() {
           onSearchBlur={() => setIsSearchFocused(false)}
         />
 
+
         {/* Section header */}
-        <div className="flex items-baseline justify-between">
+        <div className="flex items-baseline justify-between md:hidden">
           <h2 className="text-lg font-semibold text-foreground">
             {activeTab === 'tasks' ? 'Pending Tasks' : 'Suggestions'}
           </h2>
@@ -280,7 +294,7 @@ export default function HubPage() {
 
         {/* Loading State */}
         {activeTab === 'tasks' && isLoadingTasks && (
-          <div className="space-y-4">
+          <div className="space-y-4 md:hidden">
             {[1, 2, 3].map(i => (
               <Skeleton key={i} className="h-80 w-full rounded-xl" />
             ))}
@@ -288,7 +302,7 @@ export default function HubPage() {
         )}
 
         {activeTab === 'suggestions' && isLoadingSuggestions && (
-          <div className="space-y-4">
+          <div className="space-y-4 md:hidden">
             {[1, 2, 3].map(i => (
               <Skeleton key={i} className="h-80 w-full rounded-xl" />
             ))}
@@ -297,23 +311,80 @@ export default function HubPage() {
 
         {/* Tasks Card Stack */}
         {activeTab === 'tasks' && !isLoadingTasks && (
-          <CardStack
-            cards={filteredCards}
-            onSendMessage={handleSendMessage}
-            onDismiss={handleDismiss}
-          />
+          <div className='md:hidden'>
+            <CardStack
+              cards={filteredCards}
+              onSendMessage={handleSendMessage}
+              onDismiss={handleDismiss}
+            />
+          </div>
         )}
 
         {/* Suggestions Stack */}
         {activeTab === 'suggestions' && !isLoadingSuggestions && (
-          <SuggestionStack
-            suggestions={orderedSuggestions}
-            onCreateRule={handleCreateRule}
-            onDismiss={handleSuggestionDismiss}
-            onSendToBack={handleSuggestionSendToBack}
-          />
+          <div className='md:hidden'>
+            <SuggestionStack
+              suggestions={orderedSuggestions}
+              onCreateRule={handleCreateRule}
+              onDismiss={handleSuggestionDismiss}
+              onSendToBack={handleSuggestionSendToBack}
+            />
+          </div>
         )}
+        <div className='w-full h-[calc(100%-144px)] space-x-2 hidden md:flex'>
+          <div className='w-[50%] h-full oveflow-auto border p-2 rounded-md'>
+            <div className='flex font-semibold flex justify-center pb-2 text-foreground border-b'><span>Tasks</span></div>
+            {isLoadingTasks ?
+              <div className="space-y-4 mt-2 h-[calc(100%-33px)] overflow-auto">
+                {[1, 2, 3].map(i => (
+                  <Skeleton className="h-[200px] w-full space-x-2 rounded-xl" />
+                ))}</div> :
+              <>
+                <div className="flex items-baseline justify-end">
+
+                  <span className="text-sm text-muted-foreground m-1">
+                    {pendingCount} {'workflow'}
+                    {pendingCount !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className='h-[calc(100-51px)] overflow-auto'>
+                  <CardStack
+                    cards={filteredCards}
+                    onSendMessage={handleSendMessage}
+                    onDismiss={handleDismiss}
+                  />
+                </div>
+              </>}
+          </div>
+          <div className='w-[50%] border p-2 rounded-md'>
+            <div className='flex font-semibold flex justify-center pb-2 text-foreground border-b'><span>Suggestions</span></div>
+            {isLoadingSuggestions ? <div className="space-y-4 mt-2 h-[calc(100%-33px)] overflow-auto">
+              {[1, 2, 3].map(i => (
+                <Skeleton className="h-[200px] w-full space-x-2 rounded-xl" />
+              ))}</div> :
+              <>
+                <div className="flex items-baseline justify-end">
+
+                  <span className="text-sm text-muted-foreground m-1">
+                    {pendingCount} {'suggestion'}
+                    {pendingCount !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className='h-[calc(100-51px)] overflow-auto'>
+                  <SuggestionStack
+                    suggestions={orderedSuggestions}
+                    onCreateRule={handleCreateRule}
+                    onDismiss={handleSuggestionDismiss}
+                    onSendToBack={handleSuggestionSendToBack}
+                  />
+                </div>
+              </>
+            }
+          </div>
+        </div>
       </motion.div>
+
+
     </ScreenLayout>
   );
 }

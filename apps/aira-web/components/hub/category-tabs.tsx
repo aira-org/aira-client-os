@@ -17,9 +17,12 @@ export function CategoryTabs({
   className,
 }: CategoryTabsProps) {
   return (
+
+
+
     <div
       className={cn(
-        'flex gap-2 overflow-x-auto pb-2 scrollbar-none',
+        'flex md:hidden gap-2 pb-2 scrollbar-none',
         className,
       )}
     >
@@ -31,16 +34,17 @@ export function CategoryTabs({
             key={category.id}
             onClick={() => onCategoryChange(category.id)}
             className={cn(
-              'relative whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors',
+              'relative whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors flex-0 md:flex-1 cursor-pointer md:border md:rounded-sm  md:pointer-events-none md:cursor-default',
+
               isActive
-                ? 'text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground',
+                ? 'text-primary-foreground md:text-foreground '
+                : 'text-muted-foreground hover:text-foreground text-foreground',
             )}
           >
             {isActive && (
               <motion.div
                 layoutId="activeCategory"
-                className="absolute inset-0 rounded-full bg-primary"
+                className="absolute inset-0 rounded-full bg-primary md:bg-transparent"
                 transition={{ type: 'spring', damping: 20, stiffness: 300 }}
               />
             )}
@@ -49,5 +53,6 @@ export function CategoryTabs({
         );
       })}
     </div>
+
   );
 }

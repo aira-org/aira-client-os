@@ -19,9 +19,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
       <ToastProvider>
-        <div className={shouldShowDock ? 'min-h-screen pb-24' : 'min-h-screen'}>
+        <div className={shouldShowDock ? 'min-h-screen w-full' : 'min-h-screen'}>
           {children}
-          {shouldShowDock && <BottomDock />}
+          <div className='visible md:hidden '>
+            {shouldShowDock && <BottomDock />}
+          </div>
         </div>
       </ToastProvider>
     </AuthGuard>

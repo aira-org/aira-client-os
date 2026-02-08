@@ -6,6 +6,7 @@ import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { UserMenu } from './user-menu';
+import { BottomDock } from '../layout';
 
 interface HubHeaderProps {
   userName?: string;
@@ -57,9 +58,13 @@ export function HubHeader({
         )}
       </AnimatePresence>
 
+
       {/* Search bar */}
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <div className=" relative md:flex md:items-center md:space-x-2">
+        <div className='hidden md:block w-[50%] flex justify-start'>
+          <BottomDock />
+        </div>
+        <Search className="absolute left-[calc(50%+24px)] top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="text"
           placeholder="Search tasks, rules..."
@@ -67,7 +72,7 @@ export function HubHeader({
           onChange={e => onSearchChange(e.target.value)}
           onFocus={onSearchFocus}
           onBlur={onSearchBlur}
-          className="h-12 pl-11 pr-10"
+          className="h-12 pl-11 pr-10 md:w-[50%]"
         />
         <AnimatePresence>
           {searchQuery && (
@@ -76,7 +81,7 @@ export function HubHeader({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               onClick={() => onSearchChange('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute z-1 right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </motion.button>

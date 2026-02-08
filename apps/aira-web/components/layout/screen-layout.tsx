@@ -33,9 +33,9 @@ export function ScreenLayout({
   return (
     <main
       className={cn(
-        'min-h-screen w-full bg-background',
-        contained && 'mx-auto',
-        contained && maxWidthClasses[maxWidth],
+        'min-h-screen w-full h-[100vh] bg-background',
+        contained && '',
+
         padded && 'px-4 md:px-6',
         className,
       )}
