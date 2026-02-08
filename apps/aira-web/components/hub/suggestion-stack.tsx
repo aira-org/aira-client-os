@@ -59,7 +59,7 @@ function EmptyState() {
         transition={{ delay: 0.1 }}
         className="text-lg font-semibold text-foreground"
       >
-        All caught up
+        Nothing here yet
       </motion.h3>
       <motion.p
         initial={{ opacity: 0, y: 8 }}
@@ -67,7 +67,7 @@ function EmptyState() {
         transition={{ delay: 0.2 }}
         className="mt-1 text-sm text-muted-foreground"
       >
-        We&apos;ll suggest helpful rules as we learn your preferences
+        Suggestions appear after AiRA observes activity over time
       </motion.p>
     </motion.div>
   );

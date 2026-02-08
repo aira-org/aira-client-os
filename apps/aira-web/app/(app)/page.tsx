@@ -17,10 +17,16 @@ import {
   useUser,
   useSuggestions,
   useDeleteSuggestion,
+  useRules,
+  useUpdateRule,
   type Suggestion,
 } from '@repo/core';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/lib/constants';
+import { RuleItem } from '@/components/workspace';
+import { deriveChatCount, deriveToggleStatusText } from '@/lib/rule-utils';
+import { Plus } from 'lucide-react';
 
 function formatRelativeTime(dateString: string): string {
   const now = Date.now();
@@ -41,7 +47,7 @@ export default function HubPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [activeTab, setActiveTab] = useState(
-    searchParams.get('tab') || 'tasks',
+    searchParams.get('tab') || 'actions',
   );
   const [dismissedCardIds, setDismissedCardIds] = useState<Set<string>>(
     new Set(),
@@ -65,6 +71,10 @@ export default function HubPage() {
 
   // Delete suggestion mutation
   const { mutate: deleteSuggestion } = useDeleteSuggestion();
+
+  // Rules data
+  const { data: rulesData, isLoading: isLoadingRules } = useRules();
+  const { mutate: updateRule } = useUpdateRule();
 
   // Transform API tasks to CardData format (matching mobile app)
   const cards: CardData[] = useMemo(() => {
@@ -168,7 +178,7 @@ export default function HubPage() {
     (tabId: string) => {
       setActiveTab(tabId);
       const params = new URLSearchParams(searchParams.toString());
-      if (tabId === 'tasks') {
+      if (tabId === 'actions') {
         params.delete('tab');
       } else {
         params.set('tab', tabId);
@@ -221,7 +231,7 @@ export default function HubPage() {
   }, []);
 
   const pendingCount =
-    activeTab === 'tasks' ? filteredCards.length : orderedSuggestions.length;
+    activeTab === 'actions' ? filteredCards.length + orderedSuggestions.length : rulesData?.length || 0;
 
   // Handle create rule from suggestion
   const handleCreateRule = useCallback(
@@ -264,12 +274,8 @@ export default function HubPage() {
         {/* Section header */}
         <div className="flex items-baseline justify-between">
           <h2 className="text-lg font-semibold text-foreground">
-            {activeTab === 'tasks' ? 'Pending Tasks' : 'Suggestions'}
+            {activeTab === 'actions' ? 'Your Inbox' : 'Workspace Rules'}
           </h2>
-          <span className="text-sm text-muted-foreground">
-            {pendingCount} {activeTab === 'tasks' ? 'workflow' : 'suggestion'}
-            {pendingCount !== 1 ? 's' : ''}
-          </span>
         </div>
 
         {/* Category Tabs */}
@@ -278,40 +284,136 @@ export default function HubPage() {
           onCategoryChange={handleTabChange}
         />
 
-        {/* Loading State */}
-        {activeTab === 'tasks' && isLoadingTasks && (
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-              <Skeleton key={i} className="h-80 w-full rounded-xl" />
-            ))}
+        {/* Content - Rules Tab */}
+        {activeTab === 'rules' && (
+          <div className="space-y-6">
+            {isLoadingRules && (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                  <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+                ))}
+              </div>
+            )}
+            
+            {!isLoadingRules && rulesData && rulesData.length > 0 ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    {rulesData.length} active rules
+                  </span>
+                  <button 
+                    onClick={() => router.push(ROUTES.RULES_NEW)}
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    + New Rule
+                  </button>
+                </div>
+                {rulesData.map((rule, index) => (
+                  <motion.div
+                    key={rule.rule_id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <RuleItem
+                      id={rule.rule_id}
+                      title={rule.raw_text.slice(0, 40) + (rule.raw_text.length > 40 ? '...' : '')}
+                      description={rule.raw_text}
+                      connectorType="whatsapp"
+                      isEnabled={rule.status === 'active'}
+                      onToggle={() => {
+                        const newStatus = rule.status === 'active' ? 'inactive' : 'active';
+                        updateRule({
+                          rule_id: rule.rule_id,
+                          w_id: rule.w_id,
+                          raw_text: rule.raw_text,
+                          status: newStatus,
+                        });
+                      }}
+                      onClick={() => router.push(ROUTES.RULES_EDIT(rule.rule_id))}
+                      onStatusClick={() => router.push(ROUTES.RULES_EDIT(rule.rule_id))}
+                      chatCount={deriveChatCount(rule)}
+                      statusText={deriveToggleStatusText(rule)}
+                      lastRun={rule.last_triggered_at ? formatRelativeTime(rule.last_triggered_at) : undefined}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            ) : !isLoadingRules && (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <Plus className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h3 className="font-medium text-foreground">No rules found</h3>
+                <p className="text-sm text-muted-foreground mt-1 mb-6">Create your first automation rule to get started</p>
+                <Button onClick={() => router.push(ROUTES.RULES_NEW)}>
+                  Create Rule
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
-        {activeTab === 'suggestions' && isLoadingSuggestions && (
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-              <Skeleton key={i} className="h-80 w-full rounded-xl" />
-            ))}
+        {/* Content - Actions Tab (Merged Tasks & Suggestions) */}
+        {activeTab === 'actions' && (
+          <div className="space-y-8">
+            {/* Quick Actions Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                  Quick Actions ({filteredCards.length})
+                </h3>
+              </div>
+              
+              {isLoadingTasks ? (
+                <div className="space-y-4">
+                  {[1].map(i => (
+                    <Skeleton key={i} className="h-80 w-full rounded-xl" />
+                  ))}
+                </div>
+              ) : filteredCards.length > 0 ? (
+                <CardStack
+                  cards={filteredCards}
+                  onSendMessage={handleSendMessage}
+                  onDismiss={handleDismiss}
+                />
+              ) : (
+                <div className="rounded-xl border border-dashed p-8 text-center">
+                  <p className="text-sm text-muted-foreground">No urgent tasks</p>
+                </div>
+              )}
+            </div>
+
+            {/* Suggestions Section */}
+            <div className="space-y-4 pt-4 border-t border-border/50">
+              <div className="flex items-center gap-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-primary/40" />
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                  Suggestions ({orderedSuggestions.length})
+                </h3>
+              </div>
+
+              {isLoadingSuggestions ? (
+                <div className="space-y-4">
+                  {[1].map(i => (
+                    <Skeleton key={i} className="h-80 w-full rounded-xl" />
+                  ))}
+                </div>
+              ) : orderedSuggestions.length > 0 ? (
+                <SuggestionStack
+                  suggestions={orderedSuggestions}
+                  onCreateRule={handleCreateRule}
+                  onDismiss={handleSuggestionDismiss}
+                  onSendToBack={handleSuggestionSendToBack}
+                />
+              ) : (
+                <div className="rounded-xl border border-dashed p-8 text-center">
+                  <p className="text-sm text-muted-foreground">Checking for new insights...</p>
+                </div>
+              )}
+            </div>
           </div>
-        )}
-
-        {/* Tasks Card Stack */}
-        {activeTab === 'tasks' && !isLoadingTasks && (
-          <CardStack
-            cards={filteredCards}
-            onSendMessage={handleSendMessage}
-            onDismiss={handleDismiss}
-          />
-        )}
-
-        {/* Suggestions Stack */}
-        {activeTab === 'suggestions' && !isLoadingSuggestions && (
-          <SuggestionStack
-            suggestions={orderedSuggestions}
-            onCreateRule={handleCreateRule}
-            onDismiss={handleSuggestionDismiss}
-            onSendToBack={handleSuggestionSendToBack}
-          />
         )}
       </motion.div>
     </ScreenLayout>

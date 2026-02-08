@@ -36,8 +36,8 @@ export const BREAKPOINTS = {
 
 // Tab options for hub
 export const CATEGORIES = [
-  { id: 'tasks', label: 'Tasks' },
-  { id: 'suggestions', label: 'Suggestions' },
+  { id: 'actions', label: 'Actions' },
+  { id: 'rules', label: 'Rules' },
 ] as const;
 
 // Connector types with their colors and icons

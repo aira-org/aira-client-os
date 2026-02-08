@@ -17,5 +17,9 @@
   "packageManager": "pnpm@10.28.1",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
   }
 }

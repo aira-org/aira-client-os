@@ -17,6 +17,7 @@ interface ConnectorListItemProps {
   onClick?: () => void;
   isLoading?: boolean;
   index: number;
+  health?: 'healthy' | 'error' | 'warning';
 }
 
 const connectorIcons = {
@@ -42,6 +43,7 @@ export function ConnectorListItem({
   onClick,
   isLoading,
   index,
+  health,
 }: ConnectorListItemProps) {
   const Icon = connectorIcons[type];
 
@@ -74,12 +76,20 @@ export function ConnectorListItem({
           <div className="flex items-center justify-between gap-2">
             <h3 className="font-semibold text-foreground">{name}</h3>
             {isConnected && (
-              <Badge
-                variant="secondary"
-                className="shrink-0 text-primary-foreground text-[10px] font-medium px-2 py-0.5 bg-primary"
-              >
-                CONNECTED
-              </Badge>
+              <div className="flex items-center gap-3">
+                {health === 'healthy' && (
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[10px] font-semibold text-emerald-500 uppercase tracking-wider">Healthy</span>
+                  </div>
+                )}
+                <Badge
+                  variant="secondary"
+                  className="shrink-0 text-primary-foreground text-[10px] font-medium px-2 py-0.5 bg-primary"
+                >
+                  CONNECTED
+                </Badge>
+              </div>
             )}
           </div>
 

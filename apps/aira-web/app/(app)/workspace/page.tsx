@@ -23,9 +23,12 @@ import {
 } from '@repo/core';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import {
+  deriveChatCount,
+  deriveToggleStatusText,
+} from '@/lib/rule-utils';
 
 const TABS = [
-  { id: 'rules', label: 'Rules' },
   { id: 'connectors', label: 'Connectors' },
 ];
 
@@ -49,7 +52,7 @@ interface UIConnector {
 export default function WorkspacePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'rules';
+  const activeTab = searchParams.get('tab') || 'connectors';
   const [connectingId, setConnectingId] = React.useState<string | null>(null);
   const [showWhatsAppDialog, setShowWhatsAppDialog] = React.useState(false);
   const [showDisconnectDialog, setShowDisconnectDialog] = React.useState<
@@ -237,67 +240,7 @@ export default function WorkspacePage() {
         {/* Content */}
         {!isLoadingConnectors && !(activeTab === 'rules' && isLoadingRules) && (
           <AnimatePresence mode="wait">
-            {activeTab === 'rules' ? (
-              <motion.div
-                key="rules"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="space-y-6"
-              >
-                {rulesData && rulesData.length > 0 && (
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      All Rules
-                    </h2>
-                    <Link href={ROUTES.RULES_NEW}>
-                      <Button size="sm">
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Rule
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-
-                {rulesData && rulesData.length > 0 ? (
-                  <div className="space-y-3">
-                    {rulesData.map((rule, index) => (
-                      <motion.div
-                        key={rule.rule_id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                      >
-                        <RuleItem
-                          id={rule.rule_id}
-                          title={
-                            rule.raw_text.slice(0, 50) +
-                            (rule.raw_text.length > 50 ? '...' : '')
-                          }
-                          description={rule.raw_text}
-                          connectorType="whatsapp"
-                          isEnabled={rule.status === 'active'}
-                          onToggle={() =>
-                            handleRuleToggle(
-                              rule.rule_id,
-                              rule.status ?? 'active',
-                              rule.w_id,
-                              rule.raw_text,
-                            )
-                          }
-                          onClick={() =>
-                            router.push(ROUTES.RULES_EDIT(rule.rule_id))
-                          }
-                        />
-                      </motion.div>
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState type="rules" />
-                )}
-              </motion.div>
-            ) : (
-              <motion.div
+<motion.div
                 key="connectors"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -342,6 +285,7 @@ export default function WorkspacePage() {
                             onClick={() => handleConnectorClick(connector)}
                             isLoading={connectingId === connector.id}
                             index={idx}
+                            health={connector.isConnected ? 'healthy' : undefined}
                           />
                           <AnimatePresence>
                             {connector.type === 'whatsapp' &&
@@ -462,7 +406,6 @@ export default function WorkspacePage() {
                   </div>
                 </div>
               </motion.div>
-            )}
           </AnimatePresence>
         )}
       </motion.div>

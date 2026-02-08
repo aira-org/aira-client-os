@@ -80,8 +80,8 @@ function EmptyState({
   const getEmptyMessage = () => {
     if (!isFiltered) {
       return {
-        title: 'All caught up!',
-        subtitle: 'No workflows pending review',
+        title: 'Nothing here yet',
+        subtitle: 'Tasks appear after AiRA observes activity over time',
       };
     }
 
@@ -93,8 +93,8 @@ function EmptyState({
     }
 
     return {
-      title: 'All caught up!',
-      subtitle: 'No workflows pending review',
+      title: 'Nothing here yet',
+      subtitle: 'Tasks appear after AiRA observes activity over time',
     };
   };
 

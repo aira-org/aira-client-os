@@ -35,10 +35,13 @@ export interface ApiClientConfig {
   timeout?: number;
 }
 
+export type MockHandler = (url: string, method: string) => any;
+
 export class ApiClient {
   private axios: AxiosInstance;
   private tokenStorage: TokenStorage | null = null;
   private onUnauthorized: (() => void | Promise<void>) | null = null;
+  private mockHandler: MockHandler | null = null;
 
   constructor(config: ApiClientConfig) {
     this.axios = axios.create({
@@ -70,6 +73,14 @@ export class ApiClient {
 
   getBaseURL(): string {
     return this.axios.defaults.baseURL ?? '';
+  }
+
+  setMockHandler(handler: MockHandler | null): void {
+    this.mockHandler = handler;
+  }
+
+  hasMockHandler(): boolean {
+    return this.mockHandler !== null;
   }
 
   private setupInterceptors(): void {
@@ -133,6 +144,12 @@ export class ApiClient {
 
   async get<T = unknown>(url: string, schema?: z.ZodType<T>): Promise<T> {
     try {
+      if (this.mockHandler) {
+        const mockData = this.mockHandler(url, 'GET');
+        if (mockData !== undefined && mockData !== null) {
+          return schema ? this.validate(mockData, schema) : (mockData as T);
+        }
+      }
       const { data } = await this.axios.get<T>(url);
       return schema ? this.validate(data, schema) : data;
     } catch (error) {
@@ -143,6 +160,12 @@ export class ApiClient {
 
   async post<T = unknown>(url: string, body?: unknown, schema?: z.ZodType<T>): Promise<T> {
     try {
+      if (this.mockHandler) {
+        const mockData = this.mockHandler(url, 'POST');
+        if (mockData !== undefined && mockData !== null) {
+          return schema ? this.validate(mockData, schema) : (mockData as T);
+        }
+      }
       const { data } = await this.axios.post<T>(url, body);
       return schema ? this.validate(data, schema) : data;
     } catch (error) {
@@ -157,6 +180,12 @@ export class ApiClient {
     schema?: z.ZodType<T>,
   ): Promise<T> {
     try {
+      if (this.mockHandler) {
+        const mockData = this.mockHandler(url, 'POST');
+        if (mockData !== undefined && mockData !== null) {
+          return schema ? this.validate(mockData, schema) : (mockData as T);
+        }
+      }
       const { data } = await this.axios.post<T>(url, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -169,6 +198,12 @@ export class ApiClient {
 
   async put<T = unknown>(url: string, body: unknown, schema?: z.ZodType<T>): Promise<T> {
     try {
+      if (this.mockHandler) {
+        const mockData = this.mockHandler(url, 'PUT');
+        if (mockData !== undefined && mockData !== null) {
+          return schema ? this.validate(mockData, schema) : (mockData as T);
+        }
+      }
       const { data } = await this.axios.put<T>(url, body);
       return schema ? this.validate(data, schema) : data;
     } catch (error) {
@@ -179,6 +214,12 @@ export class ApiClient {
 
   async patch<T = unknown>(url: string, body: unknown, schema?: z.ZodType<T>): Promise<T> {
     try {
+      if (this.mockHandler) {
+        const mockData = this.mockHandler(url, 'PATCH');
+        if (mockData !== undefined && mockData !== null) {
+          return schema ? this.validate(mockData, schema) : (mockData as T);
+        }
+      }
       const { data } = await this.axios.patch<T>(url, body);
       return schema ? this.validate(data, schema) : data;
     } catch (error) {
@@ -189,6 +230,12 @@ export class ApiClient {
 
   async delete<T = unknown>(url: string, body?: unknown, schema?: z.ZodType<T>): Promise<T> {
     try {
+      if (this.mockHandler) {
+        const mockData = this.mockHandler(url, 'DELETE');
+        if (mockData !== undefined && mockData !== null) {
+          return schema ? this.validate(mockData, schema) : (mockData as T);
+        }
+      }
       const config = body !== undefined ? { data: body } : undefined;
       const { data } = await this.axios.delete<T>(url, config);
       return schema ? this.validate(data, schema) : data;

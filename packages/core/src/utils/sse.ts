@@ -40,6 +40,25 @@ export const listenToSSE = <T = unknown>(options: SSEListenerOptions<T>): Promis
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let isCompleted = false;
 
+    // Handle mock mode
+    try {
+      const { getApiClient } = require('../api/apiClient');
+      const client = getApiClient();
+      if (client.hasMockHandler()) {
+        console.warn('[SSE] Mock mode detected, simulating success');
+        setTimeout(() => {
+          if (!isCompleted) {
+            onComplete?.();
+            resolve();
+            isCompleted = true;
+          }
+        }, 1000);
+        return;
+      }
+    } catch (e) {
+      // Fallback for environments where ApiClient might not be initialized
+    }
+
     const cleanup = (): void => {
       console.warn('[SSE] Cleaning up connection');
       if (timeoutId) {

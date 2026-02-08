@@ -1,20 +1,24 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { AuthLayout } from '@/components/layout';
 import { OAuthButtons } from '@/components/auth/oauth-buttons';
-import { GOOGLE_AUTH_URL } from '@/lib/api';
+import { GOOGLE_AUTH_URL, mockLogin } from '@/lib/api';
+import { ROUTES } from '@/lib/constants';
 
 export default function SignInPage() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
 
-    // Redirect to Google OAuth URL with web state
-    const authUrl = `${GOOGLE_AUTH_URL}?state=auth:web`;
+    // Redirect to Google OAuth URL with web state and local redirect URI
+    const redirectUri = typeof window !== 'undefined' ? `${window.location.origin}/authcallback` : '';
+    const authUrl = `${GOOGLE_AUTH_URL}?state=auth:web&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
     if (GOOGLE_AUTH_URL) {
       window.location.href = authUrl;
@@ -22,6 +26,12 @@ export default function SignInPage() {
       console.error('GOOGLE_AUTH_URL is not configured');
       setIsLoading(false);
     }
+  };
+
+  const handleMockSignIn = async () => {
+    setIsLoading(true);
+    await mockLogin();
+    router.replace(ROUTES.HUB);
   };
 
   return (
@@ -36,10 +46,23 @@ export default function SignInPage() {
         <div className="text-center"></div>
 
         {/* OAuth Buttons */}
-        <OAuthButtons
-          onGoogleClick={handleGoogleSignIn}
-          isLoading={isLoading}
-        />
+        <div className="space-y-4">
+          <OAuthButtons
+            onGoogleClick={handleGoogleSignIn}
+            isLoading={isLoading}
+          />
+          
+          {process.env.NODE_ENV === 'development' && (
+            <button
+              onClick={handleMockSignIn}
+              disabled={isLoading}
+              suppressHydrationWarning
+              className="w-full text-xs text-muted-foreground hover:text-primary transition-colors underline underline-offset-4"
+            >
+              Development: Mock Login
+            </button>
+          )}
+        </div>
 
         {/* Divider */}
         <div className="relative">
@@ -122,6 +145,7 @@ export default function SignInPage() {
             By continuing, you agree to our{' '}
             <Link
               href="https://airaai.in/terms-of-use"
+              suppressHydrationWarning
               className="text-primary hover:underline"
             >
               Terms of Service
@@ -129,6 +153,7 @@ export default function SignInPage() {
             and{' '}
             <Link
               href="https://airaai.in/privacy-policy"
+              suppressHydrationWarning
               className="text-primary hover:underline"
             >
               Privacy Policy

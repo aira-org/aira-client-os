@@ -9,6 +9,7 @@ export const RuleSchema = z.object({
   status: RuleStatusSchema,
   trigger_time: z.string().nullable().optional(),
   interval: z.number().nullable().optional(),
+  last_triggered_at: z.string().nullable().optional(),
   is_default: z.boolean(),
 });
 
