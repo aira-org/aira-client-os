@@ -3,8 +3,7 @@
 import React, { useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus } from 'lucide-react';
-import Link from 'next/link';
+
 import { ScreenLayout } from '@/components/layout';
 import {
   TopTabBar,
@@ -21,7 +20,6 @@ import {
   useDisconnectConnector,
 } from '@repo/core';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
 
 const TABS = [
   { id: 'rules', label: 'Rules' },
