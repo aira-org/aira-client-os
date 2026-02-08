@@ -1,88 +1,48 @@
-# 🤖 AiRA — The Intelligent Control Plane
+# 🤖 AiRA — Frontend Engineering Assignment
 
-AiRA is an AI assistant that works 24/7 on your behalf, managing your life across WhatsApp, Gmail, and Calendar through proactive **Rules**.
-
----
-
-## 🎯 The Mission: From "Black Box" to Observable Automation
-
-Most AI tools suffer from a **Trust & Transparency Gap**. Users give an AI control over their digital life, but without visibility into the "gears turning," they feel uncertain.
-
-I refactored the AiRA experience to bridge this gap, transforming a passive background engine into a **Transparent Control Plane**.
+This repository contains my submission for the AiRA Frontend Engineering role. I have focused on transforming the experience from an opaque background process into a transparent, high-trust control plane.
 
 ---
 
-## ✨ Key Improvements
+## 🎯 The Mission: Solving "Automation Uncertainty"
+
+The biggest hurdle for AI tools is the **Trust Gap**. Users give an AI control over their digital life but often feel uncertain about whether it's actually working. My contribution focuses on **Observability** and **Reliability**.
+
+---
+
+## ✨ Changes & Improvements
 
 ### 1. Unified "Actions" Center
-> [!IMPORTANT]
-> **Product Refinement**: I consolidated "Quick Actions" and "Suggestions" into a single, high-leverage **Actions** tab. This reduces cognitive load and provides a unified entry point for all manual and AI-suggested interventions.
+- **The Solve**: I consolidated "Quick Actions" and "Suggestions" into a single, high-leverage **Actions** tab. This creates a unified entry point for all manual and AI-suggested interventions, reducing cognitive friction on the dashboard.
 
-![Screenshot Placeholder: The new consolidated Actions Tab](file:///placeholder_actions_tab.png)
+![Screenshot: Unified Actions Center](file:///placeholder_actions.png)
 
 ### 2. Rule "Pulse" & Health Badges
-Users no longer have to guess if a rule is active. Inline **Health Badges** derive state from execution metadata to show real-time liveness.
-
-```diff
-+ // Derived health logic in RuleCard.tsx
-+ const status = last_fired < 15min ? 'Live' : 'Standby';
-+ <Badge variant={status === 'Live' ? 'green' : 'gray'}>
-+   {status}
-+ </Badge>
-```
-
-![Screenshot Placeholder: Rule Cards with Live/Standby badges](file:///placeholder_rule_health.png)
+- **The Solve**: Rules are no longer static. I implemented inline **Health Badges** that derive liveness from metadata. Users can now see if a rule is **Live**, **Standby**, or **Paused** at a glance.
 
 ### 3. Service Connectivity Heartbeat
-Connectivity health is surfaced directly in the workspace, preventing the "Silent Failure" problem where rules appear active but the background session (WAHA) has expired.
-
-![Screenshot Placeholder: Connector list with "Healthy" indicator](file:///placeholder_connection_health.png)
+- **The Solve**: Surfaced connector health directly in the workspace. This prevents "Silent Failures" (e.g., an expired WhatsApp/WAHA session) and builds immediate confidence in the system's status.
 
 ### 4. Guided Onboarding (Template Injection)
-I replaced "Empty States" with a **Template Injection System**. Instead of a blank page, new users are greeted with actionable templates that pre-populate the creation flow.
-
-![Screenshot Placeholder: Template Suggestions in the empty Rules state](file:///placeholder_onboarding.png)
+- **The Solve**: Replaced the "empty suggestions" screen with a **Template Injection System**. New users are greeted with actionable rule templates that pre-populate the creation flow, eliminating "blank page" paralysis.
 
 ---
 
-## 🛠️ Technical Architecture
+## 🛠️ Technical Highlights
 
-### Performance & State Integrity
-- **TanStack Query Transformations**: Used `select` hooks to compute high-level "Health" states from raw API metadata, ensuring the UI stays in sync without redundant re-renders.
-- **Zustand for Cross-Tab State**: Implemented a global draft store to handle template injection, allowing seamless transitions from "Actions" to "Rule Creation".
-- **Optimistic UI Updates**: Rule toggles and sync actions feel instantaneous while the backend processes changes in the background.
-
-```bash
-# Tech Stack
-TypeScript | Next.js | TanStack Query | Zustand | Zod | Axios
-```
+- **TanStack Query Transformations**: Used `select` hooks to compute system health states from raw API metadata, keeping the UI logic clean and performant.
+- **Zustand for Cross-Tab State**: Implemented a global draft store to handle template injection, allowing users to move from "Actions" to "Rule Creation" without losing context.
+- **Optimistic UI**: Rule toggles and sync actions feel instantaneous, providing immediate feedback while the server synchronizes.
 
 ---
 
 ## 🚀 Future Roadmap: Scaling Reliability
 
-- **Dry Run Mode**: Preview rule behavior against the last 50 messages before activation.
-- **Instruction Linting**: Client-side validation to prevent conflicting or non-deterministic AI logic.
-- **Granular Sync Monitoring**: SSE-driven progress bars for real-time indexing visibility.
+To take the "Reliability Engine" even further, I would implement:
+
+1. **Dry Run Mode**: A "Sim-Test" feature allowing users to preview rule behavior against their last 50 messages before actual activation.
+2. **Instruction Linting**: Client-side validation to detect and prevent conflicting or non-deterministic AI logic loops.
+3. **Granular Sync Monitoring**: SSE-driven progress bars (replacing standard spinners) to show real-time indexing status for WhatsApp and Gmail chats.
 
 ---
-
-## 🏗️ Project Structure
-
-```
-├── apps/
-│   ├── aira-web/          # Next.js Dashboard & Rive animations
-├── packages/
-│   ├── core/              # Shared API client, Schemas, & Auth
-│   └── typescript-config/ # Global TS configurations
-```
-
-## 🏁 Getting Started
-
-```bash
-pnpm install
-pnpm dev --filter=aira-web
-```
-
----
-MIT License © 2026 alwaysvivek
+**Vivek Dagar** | [GitHub](https://github.com/alwaysvivek) | [LinkedIn](https://linkedin.com/in/vivekdagar)
