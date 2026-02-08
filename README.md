@@ -16,11 +16,10 @@ The biggest hurdle for AI tools is the **Trust Gap**. Users give an AI control o
 - **The Solve**: I consolidated "Quick Actions" and "Suggestions" into a single, high-leverage **Actions** tab. This creates a unified entry point for all manual and AI-suggested interventions.
 - **Onboarding Boost**: Replaced empty states with a **Template Injection System**. New users are greeted with actionable rule templates that pre-populate the creation flow, eliminating "blank page" paralysis.
 
-````carousel
-![Screenshot: Unified Actions Hub](./demos/actions_center.png)
+![Screenshot: Unified Actions Hub](https://github.com/alwaysvivek/aira-client-os/blob/master/demos/actions_center.png)
 <!-- slide -->
 ![Screenshot: Guided Onboarding](./demos/onboarding_templates.png)
-````
+
 
 ### 2. Rule "Pulse" & Clickable Observability
 - **The Solve**: Rules now feature **Health Badges** and a live **Pulse Indicator** that derive liveness from metadata. The status text is now **clickable**, taking users directly to the schedule settings for immediate control.
