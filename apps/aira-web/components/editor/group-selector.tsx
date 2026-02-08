@@ -11,6 +11,7 @@ interface Group {
   name: string;
   memberCount?: number;
   rulesCount?: number;
+  isModerated?: boolean;
 }
 
 interface GroupSelectorProps {
@@ -55,6 +56,7 @@ export function GroupSelector({
           <div className="space-y-1">
             {groups.map(group => {
               const isSelected = selected.includes(group.id);
+              const isInactive = group.isModerated === false;
 
               return (
                 <motion.button
@@ -64,6 +66,7 @@ export function GroupSelector({
                   className={cn(
                     'flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors',
                     isSelected ? 'bg-primary/10' : 'hover:bg-secondary',
+                    isInactive && 'opacity-70',
                   )}
                 >
                   <div
@@ -79,8 +82,17 @@ export function GroupSelector({
                       )}
                     />
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">{group.name}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground truncate">
+                        {group.name}
+                      </p>
+                      {isInactive && (
+                        <span className="shrink-0 rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                          Needs Setup
+                        </span>
+                      )}
+                    </div>
                     {(group.rulesCount !== undefined ||
                       group.memberCount !== undefined) && (
                       <p className="text-xs text-muted-foreground">
@@ -94,7 +106,7 @@ export function GroupSelector({
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className="flex h-6 w-6 items-center justify-center rounded-full bg-primary"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary"
                     >
                       <Check className="h-4 w-4 text-primary-foreground" />
                     </motion.div>
