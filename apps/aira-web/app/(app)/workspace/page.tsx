@@ -23,6 +23,10 @@ import {
 } from '@repo/core';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import {
+  deriveChatCount,
+  deriveToggleStatusText,
+} from '@/lib/rule-utils';
 
 const TABS = [
   { id: 'rules', label: 'Rules' },
@@ -288,6 +292,8 @@ export default function WorkspacePage() {
                           onClick={() =>
                             router.push(ROUTES.RULES_EDIT(rule.rule_id))
                           }
+                          chatCount={deriveChatCount(rule)}
+                          statusText={deriveToggleStatusText(rule)}
                         />
                       </motion.div>
                     ))}

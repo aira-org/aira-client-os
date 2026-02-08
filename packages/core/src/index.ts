@@ -34,6 +34,16 @@ export {
   type Suggestion,
   type SuggestionsResponse,
   type DeleteSuggestionResponse,
+  RuleStatusSchema,
+  RuleSchema,
+  RulesResponseSchema,
+  RuleMutationResponseSchema,
+  type RuleStatus,
+  type Rule,
+  type CreateRuleRequest,
+  type UpdateRuleRequest,
+  type DeleteRuleRequest,
+  type RuleMutationResponse,
 } from './schemas';
 export { ApiClient, initApiClient, getApiClient, ApiError, ValidationError } from './api/apiClient';
 export type { ApiClientConfig } from './api/apiClient';

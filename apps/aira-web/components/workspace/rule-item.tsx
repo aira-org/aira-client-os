@@ -22,6 +22,8 @@ interface RuleItemProps {
   onToggle?: (enabled: boolean) => void;
   onClick?: () => void;
   className?: string;
+  chatCount?: string;
+  statusText?: string;
 }
 
 const connectorIcons = {
@@ -47,6 +49,8 @@ export function RuleItem({
   onToggle,
   onClick,
   className,
+  chatCount,
+  statusText,
 }: RuleItemProps) {
   const Icon = connectorIcons[connectorType];
 
@@ -75,10 +79,22 @@ export function RuleItem({
 
           {/* Content */}
           <div className="flex-1 cursor-pointer" onClick={onClick}>
-            <h4 className="font-medium text-foreground">{title}</h4>
+            <div className="flex items-center gap-2 mb-1">
+              <h4 className="font-medium text-foreground">{title}</h4>
+              {chatCount && (
+                <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                  {chatCount}
+                </span>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground line-clamp-1">
               {description}
             </p>
+            {statusText && (
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                {statusText}
+              </p>
+            )}
           </div>
 
           {/* Toggle */}
