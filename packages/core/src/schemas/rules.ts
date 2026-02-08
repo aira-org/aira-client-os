@@ -23,6 +23,7 @@ export type RuleStatus = z.infer<typeof RuleStatusSchema>;
 export type Rule = z.infer<typeof RuleSchema>;
 
 export interface CreateRuleRequest {
+  title?:string;
   w_id: string[];
   raw_text: string;
   trigger_time?: string;

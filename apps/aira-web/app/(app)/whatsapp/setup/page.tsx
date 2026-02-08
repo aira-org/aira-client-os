@@ -16,6 +16,7 @@ import {
 } from '@repo/core';
 import Header from '@/components/ui/header';
 import { useToast } from '@/components/ui/toast';
+import Link from 'next/link';
 
 // WhatsApp Logo SVG Component
 function WhatsAppLogo({ className }: { className?: string }) {
@@ -328,13 +329,19 @@ export default function WhatsAppSetupPage() {
             transition={{ delay: 0.7 }}
             className="flex items-center justify-center gap-2 pb-6 text-xs text-muted-foreground"
           >
-            <button className="underline hover:text-foreground">
+           <Link
+              href="https://airaai.in/terms-of-use"
+              className="text-primary hover:underline"
+            >
               Terms and Conditions
-            </button>
+            </Link>{' '}
             <span>•</span>
-            <button className="underline hover:text-foreground">
+            <Link
+              href="https://airaai.in/privacy-policy"
+              className="text-primary hover:underline"
+            >
               Privacy Policy
-            </button>
+            </Link>
           </motion.div>
         </motion.div>
       </div>

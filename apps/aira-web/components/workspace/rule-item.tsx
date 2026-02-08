@@ -74,9 +74,9 @@ export function RuleItem({
           </div>
 
           {/* Content */}
-          <div className="flex-1 cursor-pointer" onClick={onClick}>
+          <div className="flex-1 cursor-pointer" onClick={onClick}> 
             <h4 className="font-medium text-foreground">{title}</h4>
-            <p className="text-sm text-muted-foreground line-clamp-1">
+            <p className="text-sm text-muted-foreground line-clamp-1 flex-wrap ">
               {description}
             </p>
           </div>

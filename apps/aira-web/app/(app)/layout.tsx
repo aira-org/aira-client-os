@@ -3,7 +3,7 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import { BottomDock } from '@/components/layout';
-import { AuthGuard } from '@/components/auth';
+// import { AuthGuard } from '@/components/auth';
 import { ToastProvider } from '@/components/ui/toast';
 
 const VISIBLE_DOCK_ROUTES = ['/', '/workspace'];
@@ -17,13 +17,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <AuthGuard>
+    // <AuthGuard>
       <ToastProvider>
         <div className={shouldShowDock ? 'min-h-screen pb-24' : 'min-h-screen'}>
           {children}
           {shouldShowDock && <BottomDock />}
         </div>
       </ToastProvider>
-    </AuthGuard>
+    // </AuthGuard>
   );
 }

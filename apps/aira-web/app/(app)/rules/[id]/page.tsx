@@ -24,9 +24,8 @@ import {
   type Connector,
   type IntervalType,
 } from '@/components/editor';
-import { ROUTES } from '@/lib/constants';
+import { MOCK_RULES, ROUTES } from '@/lib/constants';
 import {
-  useRules,
   useUpdateRule,
   useDeleteRule,
   useWahaGroups,
@@ -465,13 +464,16 @@ function EditRuleForm({ rule, connectors, groups }: EditRuleFormProps) {
   );
 }
 
+
 export default function EditRulePage() {
   const router = useRouter();
   const params = useParams();
   const ruleId = params.id as string;
 
-  // Fetch all rules and find the one we're editing
-  const { data: rules, isLoading: isLoadingRules } = useRules();
+  
+
+  const isLoadingRules = false;
+  const rules = MOCK_RULES;
   const rule = useMemo(
     () => rules?.find(r => r.rule_id === ruleId),
     [rules, ruleId],
