@@ -35,7 +35,7 @@ export function AuthGuard({ children, requireActive = true }: AuthGuardProps) {
   // Show nothing while checking auth
   if (isLoading || (!isAuthenticated && !isLoading)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center bg-background" suppressHydrationWarning>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
       </div>
     );
@@ -44,7 +44,7 @@ export function AuthGuard({ children, requireActive = true }: AuthGuardProps) {
   // Show loading while checking user status
   if (requireActive && isUserLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center bg-background" suppressHydrationWarning>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
       </div>
     );

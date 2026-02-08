@@ -17,10 +17,10 @@ The biggest hurdle for AI tools is the **Trust Gap**. Users give an AI control o
 
 ![Screenshot: Unified Actions Center](./demos/actions_center.png)
 
-### 2. Rule "Pulse" & Health Badges
-- **The Solve**: Rules are no longer static. I implemented inline **Health Badges** that derive liveness from metadata. Users can now see if a rule is **Live**, **Standby**, or **Paused** at a glance.
+### 2. Rule "Pulse" & Clickable Observability
+- **The Solve**: Rules now feature **Health Badges** and a live **Pulse Indicator** that derive liveness from metadata. The status text is now **clickable**, taking users directly to the schedule settings for immediate control.
 
-![Screenshot: Rule Pulse & Health Badges](./demos/rule_health.png)
+![Screenshot: Rule Transparency & Pulse Indicators](./demos/workspace_rules_transparency.png)
 
 ### 3. Service Connectivity Heartbeat
 - **The Solve**: Surfaced connector health directly in the workspace. This prevents "Silent Failures" (e.g., an expired WhatsApp/WAHA session) and builds immediate confidence in the system's status.
@@ -39,6 +39,7 @@ The biggest hurdle for AI tools is the **Trust Gap**. Users give an AI control o
 - **TanStack Query Transformations**: Used `select` hooks to compute system health states from raw API metadata, keeping the UI logic clean and performant.
 - **Zustand for Cross-Tab State**: Implemented a global draft store to handle template injection, allowing users to move from "Actions" to "Rule Creation" without losing context.
 - **Optimistic UI**: Rule toggles and sync actions feel instantaneous, providing immediate feedback while the server synchronizes.
+- **Hydration Resilience**: Implemented `suppressHydrationWarning` on core layout components to ensure a seamless experience even with aggressive browser extensions.
 
 ---
 
