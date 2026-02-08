@@ -99,3 +99,71 @@ export const ROUTES = {
   WHATSAPP_SUGGESTIONS: '/whatsapp/suggestions',
   WHATSAPP_RULES_CHAT_PICKER: '/whatsapp/rules-chat-picker',
 } as const;
+
+// Schedule Interval Enum
+export enum ScheduleInterval {
+  NONE = 'none',
+  ONCE = 'once',
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  QUARTERLY = 'quarterly',
+  YEARLY = 'yearly',
+}
+
+// Interval to Days mapping
+export const INTERVAL_TO_DAYS: Record<ScheduleInterval, number> = {
+  [ScheduleInterval.NONE]: 0,
+  [ScheduleInterval.ONCE]: 0,
+  [ScheduleInterval.DAILY]: 1,
+  [ScheduleInterval.WEEKLY]: 7,
+  [ScheduleInterval.MONTHLY]: 30,
+  [ScheduleInterval.QUARTERLY]: 90,
+  [ScheduleInterval.YEARLY]: 365,
+} as const;
+
+// Days to Interval mapping
+export const DAYS_TO_INTERVAL: Record<number, ScheduleInterval> = {
+  0: ScheduleInterval.NONE,
+  1: ScheduleInterval.DAILY,
+  7: ScheduleInterval.WEEKLY,
+  30: ScheduleInterval.MONTHLY,
+  90: ScheduleInterval.QUARTERLY,
+  365: ScheduleInterval.YEARLY,
+} as const;
+
+// Service connector IDs
+export enum ServiceConnector {
+  GOOGLE_DRIVE = 'google_drive',
+  GOOGLE_CALENDAR = 'google_calendar',
+  EMAIL = 'email_scope',
+  WHATSAPP = 'whatsapp',
+}
+
+// Keywords for auto-detecting services from rule text
+export const SERVICE_KEYWORDS: Record<ServiceConnector, readonly string[]> = {
+  [ServiceConnector.GOOGLE_DRIVE]: [
+    'drive',
+    'file',
+    'document',
+    'folder',
+    'upload',
+    'download',
+  ],
+  [ServiceConnector.GOOGLE_CALENDAR]: [
+    'calendar',
+    'event',
+    'meeting',
+    'schedule',
+    'appointment',
+    'reminder',
+  ],
+  [ServiceConnector.EMAIL]: ['email', 'mail', 'send', 'inbox', 'message'],
+  [ServiceConnector.WHATSAPP]: ['whatsapp', 'group', 'chat', 'message'],
+} as const;
+
+// Default schedule time
+export const DEFAULT_SCHEDULE_TIME = '09:00';
+
+// Maximum keywords to show in UI
+export const MAX_MATCHED_KEYWORDS = 5;
