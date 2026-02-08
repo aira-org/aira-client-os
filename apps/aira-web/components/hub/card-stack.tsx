@@ -238,10 +238,10 @@ function StackedCard({
         isDismissing
           ? controls
           : {
-              opacity,
-              y: translateY,
-              scale,
-            }
+            opacity,
+            y: translateY,
+            scale,
+          }
       }
       exit={{ opacity: 0, x: -300, scale: 0.9, transition: { duration: 0.2 } }}
       transition={{ ...SPRING_CONFIG, duration: 0.3 }}
