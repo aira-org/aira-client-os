@@ -1,5 +1,5 @@
 'use client';
-
+import { useToast } from '@/components/ui/toast';
 import React, { useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -107,6 +107,7 @@ function detectKeywords(text: string): string[] {
 }
 
 export default function NewRulePage() {
+  const { showToast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -278,10 +279,14 @@ export default function NewRulePage() {
       ruleData.interval = INTERVAL_TO_DAYS[scheduleInterval];
     }
 
+    const handleRuleError = () => {
+      showToast('Failed to create rule. Please try again.', 'error');
+    };
     createRule(ruleData, {
       onSuccess: () => {
         router.back();
       },
+      onError: handleRuleError,
     });
   }, [
     canSave,
@@ -293,6 +298,7 @@ export default function NewRulePage() {
     createRule,
     router,
     suggestionId,
+    showToast,
   ]);
 
   return (
@@ -332,7 +338,7 @@ export default function NewRulePage() {
                 value={rawText}
                 onChange={e => setRawText(e.target.value)}
                 placeholder="Describe what this rule should do..."
-                className="min-h-[100px] resize-none border-0 bg-transparent p-0 text-[15px] focus-visible:ring-0 p-3"
+                className="min-h-25 resize-none border-0 bg-transparent text-[15px] focus-visible:ring-0 p-3"
               />
               {matchedKeywords.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border pt-3">
@@ -449,12 +455,18 @@ export default function NewRulePage() {
             />
           </div>
           <div className="max-h-[60vh] overflow-y-auto">
-            <GroupSelector
-              groups={filteredGroups}
-              selected={selectedGroups}
-              onChange={setSelectedGroups}
-              label="WhatsApp Groups & Chats"
-            />
+            {filteredGroups.length === 0 ? (
+              <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+                No groups found
+              </div>
+            ) : (
+              <GroupSelector
+                groups={filteredGroups}
+                selected={selectedGroups}
+                onChange={setSelectedGroups}
+                label="WhatsApp Groups & Chats"
+              />
+            )}
           </div>
           <div className="flex justify-end pt-4">
             <Button onClick={() => setShowGroupPicker(false)}>
