@@ -25,15 +25,18 @@ export default function SignInPage() {
   };
 
   return (
-    <AuthLayout>
+    <AuthLayout subtitle="Your AI assistant for WhatsApp automation">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
         className="space-y-8"
       >
-        {/* Description */}
-        <div className="text-center"></div>
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground/80 lowercase">
+            Connect your accounts, create rules, and let AiRA handle the rest
+          </p>
+        </div>
 
         {/* OAuth Buttons */}
         <OAuthButtons

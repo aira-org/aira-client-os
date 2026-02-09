@@ -9,12 +9,15 @@ interface AuthLayoutProps {
   className?: string;
   /** Show the brand header */
   showBrand?: boolean;
+  /** Subtitle context */
+  subtitle?: string;
 }
 
 export function AuthLayout({
   children,
   className,
   showBrand = true,
+  subtitle,
 }: AuthLayoutProps) {
   return (
     <div
@@ -34,6 +37,16 @@ export function AuthLayout({
             <h1 className="text-4xl font-bold tracking-tight text-foreground">
               AiRA
             </h1>
+            {subtitle && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="mt-2 text-muted-foreground"
+              >
+                {subtitle}
+              </motion.p>
+            )}
             <motion.div
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}

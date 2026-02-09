@@ -9,11 +9,12 @@ import {
   useAnimation,
   type PanInfo,
 } from 'framer-motion';
-import { Inbox } from 'lucide-react';
+import { Inbox, MessageCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { SendMessageCard, type Attachment } from './send-message-card';
 import { cn } from '@/lib/utils';
-import { SPRING_CONFIG } from '@/lib/constants';
+import { SPRING_CONFIG, ROUTES } from '@/lib/constants';
+import Link from 'next/link';
 
 // Swipe configuration
 const SWIPE_THRESHOLD = 150;
@@ -80,8 +81,9 @@ function EmptyState({
   const getEmptyMessage = () => {
     if (!isFiltered) {
       return {
-        title: 'All caught up!',
-        subtitle: 'No workflows pending review',
+        title: 'No pending tasks',
+        subtitle: 'Tasks appear here when AiRA needs your input on connected integrations',
+        showCTA: true,
       };
     }
 
@@ -89,16 +91,18 @@ function EmptyState({
       return {
         title: `${activeCategory} cleared!`,
         subtitle: `${totalOtherTasks} task${totalOtherTasks !== 1 ? 's' : ''} in other categories`,
+        showCTA: false,
       };
     }
 
     return {
-      title: 'All caught up!',
-      subtitle: 'No workflows pending review',
+      title: 'No pending tasks',
+      subtitle: 'Tasks appear here when AiRA needs your input on connected integrations',
+      showCTA: true,
     };
   };
 
-  const { title, subtitle } = getEmptyMessage();
+  const { title, subtitle, showCTA } = getEmptyMessage();
 
   return (
     <motion.div
@@ -126,10 +130,28 @@ function EmptyState({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="mt-1 text-sm text-muted-foreground"
+        className="mt-1 text-sm text-muted-foreground max-w-xs"
       >
         {subtitle}
       </motion.p>
+
+      {/* Getting started CTA for new users */}
+      {showCTA && (
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-6"
+        >
+          <Link
+            href={ROUTES.WHATSAPP_SETUP}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Connect WhatsApp to get started
+          </Link>
+        </motion.div>
+      )}
 
       {/* Category chips for filtered empty state */}
       {isFiltered && totalOtherTasks > 0 && (

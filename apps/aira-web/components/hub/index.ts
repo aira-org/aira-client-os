@@ -6,5 +6,6 @@ export { SendMessageCard } from './send-message-card';
 export { SuggestionCard } from './suggestion-card';
 export { SuggestionStack } from './suggestion-stack';
 export { UserMenu } from './user-menu';
+export { WelcomeBanner } from './welcome-banner';
 export type { CardData, BaseCardData, MessageCardData } from './card-stack';
 export type { Attachment } from './send-message-card';
