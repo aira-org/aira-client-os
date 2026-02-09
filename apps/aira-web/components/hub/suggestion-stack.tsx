@@ -59,15 +59,15 @@ function EmptyState() {
         transition={{ delay: 0.1 }}
         className="text-lg font-semibold text-foreground"
       >
-        All caught up
+        No suggestions yet
       </motion.h3>
       <motion.p
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="mt-1 text-sm text-muted-foreground"
+        className="mt-1 text-sm text-muted-foreground max-w-xs"
       >
-        We&apos;ll suggest helpful rules as we learn your preferences
+        AiRA learns from your connected chats and suggests automation rules based on your patterns
       </motion.p>
     </motion.div>
   );

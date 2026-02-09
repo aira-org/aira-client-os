@@ -9,6 +9,7 @@ import {
   CategoryTabs,
   CardStack,
   SuggestionStack,
+  WelcomeBanner,
 } from '@/components/hub';
 import type { CardData, MessageCardData } from '@/components/hub';
 import {
@@ -260,6 +261,9 @@ export default function HubPage() {
           onSearchFocus={() => setIsSearchFocused(true)}
           onSearchBlur={() => setIsSearchFocused(false)}
         />
+
+        {/* Welcome banner for new users */}
+        <WelcomeBanner />
 
         {/* Section header */}
         <div className="flex items-baseline justify-between">
