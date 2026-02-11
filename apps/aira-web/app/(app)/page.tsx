@@ -245,7 +245,7 @@ export default function HubPage() {
   const userName = user?.f_n || 'there';
 
   return (
-    <ScreenLayout maxWidth="xl" className="py-6">
+    <ScreenLayout maxWidth="full" className="py-6">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
