@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { UserMenu } from './user-menu';
 
 interface HubHeaderProps {
   userName?: string;
@@ -49,16 +48,15 @@ export function HubHeader({
             className="flex items-center justify-between"
           >
             <div>
-              <p className="text-muted-foreground">{greeting}</p>
-              <h1 className="text-2xl font-bold text-foreground">{userName}</h1>
+              {/* <p className="text-muted-foreground">{greeting}</p> */}
+              <h1 className="text-2xl font-bold text-foreground">{greeting} {userName}</h1>
             </div>
-            <UserMenu userName={userName} userAvatar={userAvatar} />
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Search bar */}
-      <div className="relative">
+      <div className="relative w-full sm:w-1/2">
         <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="text"

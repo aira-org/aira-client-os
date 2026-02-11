@@ -296,7 +296,7 @@ export default function NewRulePage() {
   ]);
 
   return (
-    <ScreenLayout maxWidth="lg" className="relative min-h-screen pb-24">
+    <ScreenLayout maxWidth="lg" className="relative min-h-screen">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -412,7 +412,7 @@ export default function NewRulePage() {
         </div>
 
         {/* Bottom Save Button */}
-        <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background px-5 py-4">
+        <div className="sticky bottom-0 left-0 right-0 border-t border-border bg-background px-5 py-4">
           <Button
             onClick={handleSave}
             disabled={!canSave}

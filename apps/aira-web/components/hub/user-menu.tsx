@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useLogout, useDeleteAccount } from '@repo/core';
+import { cn } from '@/src/lib/utils';
 
 interface UserMenuProps {
   userName?: string;
@@ -66,13 +67,15 @@ export function UserMenu({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className={className}>
+          <button className={cn("flex items-center gap-2 cursor-pointer", className)}>
             <Avatar className="h-12 w-12 border-2 border-border cursor-pointer hover:border-primary/50 transition-colors">
               <AvatarImage src={userAvatar} alt={userName} />
               <AvatarFallback className="bg-primary/20 text-primary">
                 {userName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
+        <span className="text-sm font-medium text-foreground">{userName}</span>
+
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">

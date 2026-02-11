@@ -1,3 +1,3 @@
 export { ScreenLayout } from './screen-layout';
-export { BottomDock } from './bottom-dock';
+export { BottomDock } from './sidebar';
 export { AuthLayout } from './auth-layout';
