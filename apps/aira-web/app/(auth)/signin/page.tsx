@@ -13,8 +13,9 @@ export default function SignInPage() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
 
-    // Redirect to Google OAuth URL with web state
-    const authUrl = `${GOOGLE_AUTH_URL}?state=auth:web`;
+    // Tell backend where to redirect after OAuth (e.g. localhost for dev, prod URL for prod)
+    const callbackUrl = `${window.location.origin}/authcallback`;
+    const authUrl = `${GOOGLE_AUTH_URL}?state=auth:web&redirect_uri=${encodeURIComponent(callbackUrl)}`;
 
     if (GOOGLE_AUTH_URL) {
       window.location.href = authUrl;

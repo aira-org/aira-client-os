@@ -90,6 +90,13 @@ body {
   outline-offset: 2px;
 }
 
+/* Rule instruction textarea - no internal focus border */
+.rule-instruction-input:focus,
+.rule-instruction-input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* Animations */
 @keyframes shimmer {
   0% {

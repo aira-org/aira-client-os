@@ -187,7 +187,7 @@ export function ConnectorSelector({
           animate={{ opacity: 1 }}
           className="flex items-center gap-1.5 mb-1"
         >
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          {/* <Sparkles className="h-3.5 w-3.5 text-primary" /> */}
           <span className="text-xs font-medium text-muted-foreground">
             Based on your instruction
           </span>
