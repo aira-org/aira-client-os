@@ -6,6 +6,7 @@ import { LayoutGrid, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/lib/constants';
+import { ExampleRulesSection } from './example-rules-section';
 
 interface EmptyStateProps {
   type: 'rules' | 'connectors';
@@ -49,6 +50,11 @@ export function EmptyState({ type, className }: EmptyStateProps) {
           {action}
         </Button>
       </Link>
+      {type === 'rules' && (
+        <div className="mt-10 w-full max-w-md px-4">
+          <ExampleRulesSection />
+        </div>
+      )}
     </motion.div>
   );
 }
