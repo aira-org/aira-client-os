@@ -34,6 +34,7 @@ export {
   type Suggestion,
   type SuggestionsResponse,
   type DeleteSuggestionResponse,
+  type Rule,
   type CreateRuleRequest,
   type UpdateRuleRequest,
 } from './schemas';
