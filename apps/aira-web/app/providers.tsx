@@ -12,8 +12,6 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
-  // Verify auth state on mount by calling /users/me API
-  // This works with HttpOnly cookies since browser sends them automatically
   useEffect(() => {
     verifyAuthState();
   }, []);
