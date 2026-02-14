@@ -32,6 +32,7 @@ export {
   useCreateRule,
   useUpdateRule,
   useDeleteRule,
+  useRunRuleOnce,
   RULES_QUERY_KEY,
   CHAT_RULES_QUERY_KEY,
 } from './useRules';

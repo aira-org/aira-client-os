@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useCallback, useState } from 'react';
+import Link from 'next/link';
 import {
   AnimatePresence,
   motion,
@@ -9,11 +10,12 @@ import {
   useAnimation,
   type PanInfo,
 } from 'framer-motion';
-import { Inbox } from 'lucide-react';
+import { Inbox, Link2, Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { SendMessageCard, type Attachment } from './send-message-card';
 import { cn } from '@/lib/utils';
-import { SPRING_CONFIG } from '@/lib/constants';
+import { SPRING_CONFIG, ROUTES } from '@/lib/constants';
 
 // Swipe configuration
 const SWIPE_THRESHOLD = 150;
@@ -38,6 +40,12 @@ export interface MessageCardData extends BaseCardData {
 
 export type CardData = MessageCardData | BaseCardData;
 
+/** Onboarding state for smart empty state - pass when cards are empty */
+export interface OnboardingState {
+  hasConnectors: boolean;
+  hasRules: boolean;
+}
+
 interface CardStackProps {
   cards: CardData[];
   onSendMessage?: (
@@ -51,6 +59,8 @@ interface CardStackProps {
   activeCategory?: string;
   otherCategoryTasks?: { id: string; label: string; count: number }[];
   onCategoryPress?: (categoryId: string) => void;
+  /** When provided and cards are empty, shows contextual onboarding message */
+  onboardingState?: OnboardingState;
 }
 
 // Priority colors
@@ -66,22 +76,47 @@ function EmptyState({
   activeCategory,
   otherCategoryTasks = [],
   onCategoryPress,
+  onboardingState,
 }: {
   isFiltered?: boolean;
   activeCategory?: string;
   otherCategoryTasks?: { id: string; label: string; count: number }[];
   onCategoryPress?: (categoryId: string) => void;
+  onboardingState?: OnboardingState;
 }) {
   const totalOtherTasks = otherCategoryTasks.reduce(
     (sum, cat) => sum + cat.count,
     0,
   );
 
-  const getEmptyMessage = () => {
+  const getEmptyContent = () => {
+    // Smart onboarding: show contextual message for new users
+    if (!isFiltered && onboardingState) {
+      if (!onboardingState.hasConnectors) {
+        return {
+          title: 'Welcome!',
+          subtitle: 'Connect your first service to get started',
+          action: {
+            label: 'Connect Service',
+            href: `${ROUTES.WORKSPACE}?tab=connectors`,
+            Icon: Link2,
+          },
+        };
+      }
+      if (!onboardingState.hasRules) {
+        return {
+          title: 'Great!',
+          subtitle: 'Now create a rule to automate something',
+          action: { label: 'Create Rule', href: ROUTES.RULES_NEW, Icon: Plus },
+        };
+      }
+    }
+
     if (!isFiltered) {
       return {
         title: 'All caught up!',
         subtitle: 'No workflows pending review',
+        action: null,
       };
     }
 
@@ -89,16 +124,18 @@ function EmptyState({
       return {
         title: `${activeCategory} cleared!`,
         subtitle: `${totalOtherTasks} task${totalOtherTasks !== 1 ? 's' : ''} in other categories`,
+        action: null,
       };
     }
 
     return {
       title: 'All caught up!',
       subtitle: 'No workflows pending review',
+      action: null,
     };
   };
 
-  const { title, subtitle } = getEmptyMessage();
+  const { title, subtitle, action } = getEmptyContent();
 
   return (
     <motion.div
@@ -130,6 +167,23 @@ function EmptyState({
       >
         {subtitle}
       </motion.p>
+
+      {/* Action button for onboarding states */}
+      {action && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="mt-6"
+        >
+          <Link href={action.href}>
+            <Button>
+              <action.Icon className="mr-2 h-4 w-4" />
+              {action.label}
+            </Button>
+          </Link>
+        </motion.div>
+      )}
 
       {/* Category chips for filtered empty state */}
       {isFiltered && totalOtherTasks > 0 && (
@@ -300,6 +354,7 @@ export function CardStack({
   activeCategory,
   otherCategoryTasks = [],
   onCategoryPress,
+  onboardingState,
 }: CardStackProps) {
   // Only show top 3 cards for visual stack
   const visibleCards = useMemo(() => cards.slice(0, 3), [cards]);
@@ -319,6 +374,7 @@ export function CardStack({
         activeCategory={activeCategory}
         otherCategoryTasks={otherCategoryTasks}
         onCategoryPress={onCategoryPress}
+        onboardingState={onboardingState}
       />
     );
   }

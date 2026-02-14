@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -18,8 +18,10 @@ import { ScreenLayout } from '@/components/layout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { RuleItem } from '@/components/workspace';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/lib/constants';
+import { useRules, useUpdateRule } from '@repo/core';
 
 const connectorConfig: Record<
   string,
@@ -31,79 +33,59 @@ const connectorConfig: Record<
   drive: { name: 'Drive', icon: HardDrive, color: 'text-drive' },
 };
 
-// Mock rules by connector type
-const MOCK_RULES: Record<
-  string,
-  Array<{
-    id: string;
-    title: string;
-    description: string;
-    connectorType: 'whatsapp' | 'email' | 'calendar' | 'drive';
-    isEnabled: boolean;
-  }>
-> = {
-  whatsapp: [
-    {
-      id: '1',
-      title: 'Auto-reply to urgent messages',
-      description: 'Send automatic responses when someone mentions "urgent"',
-      connectorType: 'whatsapp',
-      isEnabled: true,
-    },
-    {
-      id: '2',
-      title: 'Forward important messages',
-      description: 'Forward messages from VIP contacts to email',
-      connectorType: 'whatsapp',
-      isEnabled: true,
-    },
-  ],
-  email: [
-    {
-      id: '3',
-      title: 'Forward receipts to accounting',
-      description: 'Auto-forward emails with "receipt" in subject',
-      connectorType: 'email',
-      isEnabled: true,
-    },
-  ],
-  calendar: [
-    {
-      id: '4',
-      title: 'Meeting summary to WhatsApp',
-      description: 'Send meeting summaries to relevant WhatsApp groups',
-      connectorType: 'calendar',
-      isEnabled: false,
-    },
-  ],
-  drive: [],
-};
-
 export default function ConnectorRulesPage() {
   const router = useRouter();
   const params = useParams();
   const connectorId = params.id as string;
   const [searchQuery, setSearchQuery] = useState('');
 
+  const { data: rulesData, isLoading, refetch } = useRules();
+  const { mutate: updateRule } = useUpdateRule();
+
   const config = connectorConfig[connectorId] || connectorConfig.whatsapp;
   const Icon = config.icon;
-  const connectorRules = MOCK_RULES[connectorId] || [];
 
-  const [rules, setRules] = useState(connectorRules);
+  const rules = useMemo(() => {
+    if (connectorId !== 'whatsapp') return [];
+    return rulesData ?? [];
+  }, [connectorId, rulesData]);
 
-  const filteredRules = rules.filter(
-    rule =>
-      rule.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rule.description.toLowerCase().includes(searchQuery.toLowerCase()),
+  const filteredRules = useMemo(
+    () =>
+      rules.filter(rule =>
+        rule.raw_text.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [rules, searchQuery],
   );
 
-  const handleRuleToggle = (id: string, enabled: boolean) => {
-    setRules(prev =>
-      prev.map(rule =>
-        rule.id === id ? { ...rule, isEnabled: enabled } : rule,
-      ),
+  const handleRuleToggle = (
+    ruleId: string,
+    currentStatus: 'active' | 'inactive',
+    wId: string[],
+    rawText: string,
+  ) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    updateRule(
+      { rule_id: ruleId, w_id: wId, raw_text: rawText, status: newStatus },
+      { onSuccess: () => refetch() },
     );
   };
+
+  if (isLoading) {
+    return (
+      <ScreenLayout maxWidth="xl" className="py-6">
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-10 w-full" />
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <Skeleton key={i} className="h-20 w-full rounded-xl" />
+            ))}
+          </div>
+        </div>
+      </ScreenLayout>
+    );
+  }
 
   return (
     <ScreenLayout maxWidth="xl" className="py-6">
@@ -175,19 +157,29 @@ export default function ConnectorRulesPage() {
           <div className="space-y-3">
             {filteredRules.map((rule, index) => (
               <motion.div
-                key={rule.id}
+                key={rule.rule_id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
                 <RuleItem
-                  id={rule.id}
-                  title={rule.title}
-                  description={rule.description}
-                  connectorType={rule.connectorType}
-                  isEnabled={rule.isEnabled}
-                  onToggle={enabled => handleRuleToggle(rule.id, enabled)}
-                  onClick={() => router.push(ROUTES.RULES_EDIT(rule.id))}
+                  id={rule.rule_id}
+                  title={
+                    rule.raw_text.slice(0, 50) +
+                    (rule.raw_text.length > 50 ? '...' : '')
+                  }
+                  description={rule.raw_text}
+                  connectorType="whatsapp"
+                  isEnabled={rule.status === 'active'}
+                  onToggle={() =>
+                    handleRuleToggle(
+                      rule.rule_id,
+                      rule.status ?? 'active',
+                      rule.w_id,
+                      rule.raw_text,
+                    )
+                  }
+                  onClick={() => router.push(ROUTES.RULES_EDIT(rule.rule_id))}
                 />
               </motion.div>
             ))}

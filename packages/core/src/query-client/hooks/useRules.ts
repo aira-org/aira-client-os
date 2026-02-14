@@ -9,11 +9,13 @@ import { getApiClient } from '../../api/apiClient';
 import {
   RulesResponseSchema,
   RuleMutationResponseSchema,
+  RunRuleOnceResponseSchema,
   type Rule,
   type CreateRuleRequest,
   type UpdateRuleRequest,
   type DeleteRuleRequest,
   type RuleMutationResponse,
+  type RunRuleOnceResponse,
 } from '../../schemas/rules';
 import { useIsAuthenticated } from '../../stores';
 import { SUGGESTIONS_QUERY_KEY } from './useSuggestion';
@@ -105,6 +107,23 @@ export const useDeleteRule = (): UseMutationResult<
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: RULES_QUERY_KEY });
       void queryClient.invalidateQueries({ queryKey: CHAT_RULES_QUERY_KEY });
+    },
+  });
+};
+
+export const useRunRuleOnce = (): UseMutationResult<
+  RunRuleOnceResponse,
+  Error,
+  CreateRuleRequest
+> => {
+  return useMutation({
+    mutationFn: async (request: CreateRuleRequest) => {
+      const apiClient = getApiClient();
+      return apiClient.post<RunRuleOnceResponse>(
+        '/v1/rules/run-once',
+        request,
+        RunRuleOnceResponseSchema,
+      );
     },
   });
 };

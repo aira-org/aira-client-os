@@ -14,9 +14,11 @@ import type { CardData, MessageCardData } from '@/components/hub';
 import {
   useApexTasks,
   useSubmitApexTask,
-  useUser,
   useSuggestions,
   useDeleteSuggestion,
+  useConnectors,
+  useRules,
+  useUser,
   type Suggestion,
 } from '@repo/core';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -55,6 +57,19 @@ export default function HubPage() {
 
   // Fetch apex tasks
   const { data: apexTasks, isLoading: isLoadingTasks } = useApexTasks();
+
+  // Fetch connectors and rules for smart empty state
+  const { data: connectorsData } = useConnectors();
+  const { data: rulesData } = useRules();
+
+  // Compute onboarding state for new users (when no tasks)
+  const onboardingState = useMemo(() => {
+    const availableServices = connectorsData?.available_services ?? [];
+    const hasConnectors =
+      availableServices.filter(s => s !== 'profile').length > 0;
+    const hasRules = (rulesData?.length ?? 0) > 0;
+    return { hasConnectors, hasRules };
+  }, [connectorsData?.available_services, rulesData?.length]);
 
   // Fetch suggestions
   const { data: suggestions, isLoading: isLoadingSuggestions } =
@@ -301,6 +316,7 @@ export default function HubPage() {
             cards={filteredCards}
             onSendMessage={handleSendMessage}
             onDismiss={handleDismiss}
+            onboardingState={onboardingState}
           />
         )}
 

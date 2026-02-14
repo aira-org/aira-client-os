@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Search, Users, ChevronRight } from 'lucide-react';
@@ -8,25 +8,48 @@ import { ScreenLayout } from '@/components/layout';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/lib/constants';
-
-// Mock groups data
-const MOCK_GROUPS = [
-  { id: '1', name: 'Project Alpha Team', memberCount: 12, rulesCount: 3 },
-  { id: '2', name: 'Marketing Team', memberCount: 8, rulesCount: 2 },
-  { id: '3', name: 'Sales Updates', memberCount: 15, rulesCount: 5 },
-  { id: '4', name: 'Engineering', memberCount: 20, rulesCount: 1 },
-  { id: '5', name: 'Leadership', memberCount: 5, rulesCount: 0 },
-  { id: '6', name: 'Design Team', memberCount: 6, rulesCount: 2 },
-];
+import { useWahaGroups } from '@repo/core';
 
 export default function GroupsPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: wahaData, isLoading } = useWahaGroups({ moderation_status: true });
 
-  const filteredGroups = MOCK_GROUPS.filter(group =>
-    group.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  const groups = useMemo(() => {
+    const items = [...(wahaData?.groups ?? []), ...(wahaData?.chats ?? [])];
+    const seen = new Set<string>();
+    return items.filter(item => {
+      if (seen.has(item.w_id)) return false;
+      seen.add(item.w_id);
+      return true;
+    });
+  }, [wahaData]);
+
+  const filteredGroups = useMemo(
+    () =>
+      groups.filter(g =>
+        g.chat_name.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [groups, searchQuery],
   );
+
+  if (isLoading) {
+    return (
+      <ScreenLayout maxWidth="xl" className="py-6">
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-full" />
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map(i => (
+              <Skeleton key={i} className="h-20 w-full rounded-xl" />
+            ))}
+          </div>
+        </div>
+      </ScreenLayout>
+    );
+  }
 
   return (
     <ScreenLayout maxWidth="xl" className="py-6">
@@ -48,7 +71,7 @@ export default function GroupsPage() {
               WhatsApp Groups
             </h1>
             <p className="text-sm text-muted-foreground">
-              {MOCK_GROUPS.length} groups connected
+              {groups.length} groups connected
             </p>
           </div>
         </div>
@@ -67,40 +90,40 @@ export default function GroupsPage() {
 
         {/* Groups List */}
         <div className="space-y-3">
-          {filteredGroups.map((group, index) => (
-            <motion.div
-              key={group.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              whileHover={{ x: 4 }}
-            >
-              <Card
-                className="cursor-pointer transition-colors hover:border-primary/50"
-                onClick={() => router.push(ROUTES.GROUP_RULES(group.id))}
+          {filteredGroups.map((group, index) => {
+            const rulesCount = group.num_active_rules + group.num_inactive_rules;
+            return (
+              <motion.div
+                key={group.w_id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                whileHover={{ x: 4 }}
               >
-                <CardContent className="flex items-center gap-4 p-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-whatsapp/20">
-                    <Users className="h-6 w-6 text-whatsapp" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-foreground">
-                      {group.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {group.memberCount} members
-                    </p>
-                  </div>
-                  {group.rulesCount > 0 && (
-                    <Badge variant="secondary">
-                      {group.rulesCount} rule{group.rulesCount !== 1 ? 's' : ''}
-                    </Badge>
-                  )}
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+                <Card
+                  className="cursor-pointer transition-colors hover:border-primary/50"
+                  onClick={() => router.push(ROUTES.GROUP_RULES(group.w_id))}
+                >
+                  <CardContent className="flex items-center gap-4 p-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-whatsapp/20">
+                      <Users className="h-6 w-6 text-whatsapp" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-foreground">
+                        {group.chat_name}
+                      </h3>
+                    </div>
+                    {rulesCount > 0 && (
+                      <Badge variant="secondary">
+                        {rulesCount} rule{rulesCount !== 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
         </div>
 
         {filteredGroups.length === 0 && (

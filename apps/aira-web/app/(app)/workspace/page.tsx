@@ -9,6 +9,7 @@ import { ScreenLayout } from '@/components/layout';
 import {
   TopTabBar,
   ConnectorListItem,
+  ConnectorDetailDialog,
   EmptyState,
   RuleItem,
 } from '@/components/workspace';
@@ -18,6 +19,7 @@ import {
   useConnectConnector,
   useRules,
   useUpdateRule,
+  useUser,
   useWahaDisconnect,
   useDisconnectConnector,
 } from '@repo/core';
@@ -51,10 +53,11 @@ export default function WorkspacePage() {
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') || 'rules';
   const [connectingId, setConnectingId] = React.useState<string | null>(null);
-  const [showWhatsAppDialog, setShowWhatsAppDialog] = React.useState(false);
-  const [showDisconnectDialog, setShowDisconnectDialog] = React.useState<
-    string | null
-  >(null);
+  const [openConnectorId, setOpenConnectorId] = React.useState<string | null>(
+    null,
+  );
+
+  const { data: user } = useUser();
 
   const { mutate: wahaDisconnect, isPending: isDisconnecting } =
     useWahaDisconnect();
@@ -150,14 +153,7 @@ export default function WorkspacePage() {
 
   const handleConnectorClick = async (connector: UIConnector) => {
     if (connector.isConnected) {
-      // Go to connector rules
-      if (connector.type === 'whatsapp') {
-        setShowWhatsAppDialog(prev => !prev);
-        return;
-      }
-      setShowDisconnectDialog(prev =>
-        prev === connector.id ? null : connector.id,
-      );
+      setOpenConnectorId(prev => (prev === connector.id ? null : connector.id));
     } else {
       // Initiate connection flow
       if (connector.type === 'whatsapp') {
@@ -344,117 +340,44 @@ export default function WorkspacePage() {
                             index={idx}
                           />
                           <AnimatePresence>
-                            {connector.type === 'whatsapp' &&
-                              showWhatsAppDialog && (
-                                <>
-                                  <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.15 }}
-                                    className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-                                    onClick={() => setShowWhatsAppDialog(false)}
-                                  />
-                                  <motion.div
-                                    initial={{
-                                      opacity: 0,
-                                      y: -8,
-                                      scale: 0.95,
-                                    }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{
-                                      opacity: 0,
-                                      y: -8,
-                                      scale: 0.95,
-                                    }}
-                                    transition={{ duration: 0.15 }}
-                                    onClick={e => e.stopPropagation()}
-                                    className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-xl border border-border bg-card p-1 shadow-lg"
-                                  >
-                                    <button
-                                      className="w-full rounded-lg px-3 py-2 text-left text-sm text-foreground hover:bg-muted transition-colors"
-                                      onClick={() => {
-                                        setShowWhatsAppDialog(false);
+                            {openConnectorId === connector.id && (
+                              <ConnectorDetailDialog
+                                connector={connector}
+                                userEmail={user?.e}
+                                onClose={() => setOpenConnectorId(null)}
+                                onModerate={
+                                  connector.type === 'whatsapp'
+                                    ? () =>
                                         router.push(
                                           ROUTES.WHATSAPP_GROUP_SELECTION,
-                                        );
-                                      }}
-                                    >
-                                      Moderate
-                                    </button>
-                                    <button
-                                      className="w-full rounded-lg px-3 py-2 text-left text-sm text-destructive hover:bg-muted transition-colors disabled:opacity-50"
-                                      disabled={isDisconnecting}
-                                      onClick={() => {
+                                        )
+                                    : undefined
+                                }
+                                onDisconnect={
+                                  connector.type === 'whatsapp'
+                                    ? () =>
                                         wahaDisconnect(undefined, {
-                                          onSuccess: () => {
-                                            setShowWhatsAppDialog(false);
-                                          },
-                                        });
-                                      }}
-                                    >
-                                      {isDisconnecting
-                                        ? 'Disconnecting...'
-                                        : 'Disconnect'}
-                                    </button>
-                                  </motion.div>
-                                </>
-                              )}
-                          </AnimatePresence>
-                          <AnimatePresence>
-                            {connector.type !== 'whatsapp' &&
-                              connector.isConnected &&
-                              showDisconnectDialog === connector.id && (
-                                <>
-                                  <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.15 }}
-                                    className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-                                    onClick={() =>
-                                      setShowDisconnectDialog(null)
-                                    }
-                                  />
-                                  <motion.div
-                                    initial={{
-                                      opacity: 0,
-                                      y: -8,
-                                      scale: 0.95,
-                                    }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{
-                                      opacity: 0,
-                                      y: -8,
-                                      scale: 0.95,
-                                    }}
-                                    transition={{ duration: 0.15 }}
-                                    onClick={e => e.stopPropagation()}
-                                    className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-xl border border-border bg-card p-1 shadow-lg"
-                                  >
-                                    <button
-                                      className="w-full rounded-lg px-3 py-2 text-left text-sm text-destructive hover:bg-muted transition-colors disabled:opacity-50"
-                                      disabled={isDisconnectingConnector}
-                                      onClick={() => {
-                                        if (connector.serviceName) {
+                                          onSuccess: () =>
+                                            setOpenConnectorId(null),
+                                        })
+                                    : connector.serviceName
+                                      ? () =>
                                           disconnectConnector(
-                                            connector.serviceName,
+                                            connector.serviceName!,
                                             {
-                                              onSuccess: () => {
-                                                setShowDisconnectDialog(null);
-                                              },
+                                              onSuccess: () =>
+                                                setOpenConnectorId(null),
                                             },
-                                          );
-                                        }
-                                      }}
-                                    >
-                                      {isDisconnectingConnector
-                                        ? 'Disconnecting...'
-                                        : 'Disconnect'}
-                                    </button>
-                                  </motion.div>
-                                </>
-                              )}
+                                          )
+                                      : undefined
+                                }
+                                isDisconnecting={
+                                  connector.type === 'whatsapp'
+                                    ? isDisconnecting
+                                    : isDisconnectingConnector
+                                }
+                              />
+                            )}
                           </AnimatePresence>
                         </div>
                       ))}

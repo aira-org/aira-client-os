@@ -34,6 +34,9 @@ export {
   type Suggestion,
   type SuggestionsResponse,
   type DeleteSuggestionResponse,
+  type Rule,
+  type CreateRuleRequest,
+  type UpdateRuleRequest,
 } from './schemas';
 export { ApiClient, initApiClient, getApiClient, ApiError, ValidationError } from './api/apiClient';
 export type { ApiClientConfig } from './api/apiClient';
@@ -79,6 +82,7 @@ export {
   useCreateRule,
   useUpdateRule,
   useDeleteRule,
+  useRunRuleOnce,
   RULES_QUERY_KEY,
   CHAT_RULES_QUERY_KEY,
   useLogout,

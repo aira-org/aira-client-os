@@ -164,8 +164,38 @@ export default function WhatsAppSetupPage() {
     }
   };
 
-  const code = linkCode ?? '';
-  const formattedCode = code ? `${code.slice(0, 4)} ${code.slice(4)}` : '';
+  const formattedCode = linkCode
+    ? `${linkCode.slice(0, 4)} ${linkCode.slice(4)}`
+    : '';
+
+  // Real countdown timer (5 minutes from when code appears)
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!linkCode) {
+      setSecondsLeft(null);
+      return;
+    }
+    const expiry = Date.now() + 5 * 60 * 1000;
+    setSecondsLeft(300);
+
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((expiry - Date.now()) / 1000));
+      setSecondsLeft(remaining);
+      if (remaining <= 0) {
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [linkCode]);
+
+  const timerDisplay =
+    secondsLeft !== null
+      ? secondsLeft > 0
+        ? `${Math.floor(secondsLeft / 60)}:${(secondsLeft % 60).toString().padStart(2, '0')}`
+        : 'Expired'
+      : null;
 
   return (
     <ScreenLayout maxWidth="md" className="py-4 h-screen" padded={false}>
@@ -218,23 +248,39 @@ export default function WhatsAppSetupPage() {
             </div>
 
             {/* Expiry Indicator */}
-            <div className="flex items-center gap-2">
-              <motion.div
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.7, 1, 0.7],
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
-                className="h-1.5 w-1.5 rounded-full bg-primary"
-              />
-              <p className="text-xs text-muted-foreground">
-                Code expires in 5 minutes
-              </p>
-            </div>
+            {timerDisplay && (
+              <div className="flex items-center gap-2">
+                <motion.div
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.7, 1, 0.7],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                  className={cn(
+                    'h-1.5 w-1.5 rounded-full',
+                    secondsLeft !== null && secondsLeft <= 0
+                      ? 'bg-destructive'
+                      : 'bg-primary',
+                  )}
+                />
+                <p
+                  className={cn(
+                    'text-xs',
+                    secondsLeft !== null && secondsLeft <= 0
+                      ? 'text-destructive font-medium'
+                      : 'text-muted-foreground',
+                  )}
+                >
+                  {secondsLeft !== null && secondsLeft <= 0
+                    ? 'Code expired — get a new code'
+                    : `Code expires in ${timerDisplay}`}
+                </p>
+              </div>
+            )}
           </motion.div>
 
           {/* Details Grid */}

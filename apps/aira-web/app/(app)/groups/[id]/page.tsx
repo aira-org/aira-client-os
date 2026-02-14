@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Search, Users, Plus } from 'lucide-react';
@@ -9,59 +9,83 @@ import { ScreenLayout } from '@/components/layout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { RuleItem } from '@/components/workspace';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/lib/constants';
-
-// Mock data
-const MOCK_GROUP = {
-  id: '1',
-  name: 'Project Alpha Team',
-  memberCount: 12,
-};
-
-const MOCK_RULES = [
-  {
-    id: '1',
-    title: 'Auto-reply to urgent messages',
-    description: 'Send automatic responses when someone mentions "urgent"',
-    connectorType: 'whatsapp' as const,
-    isEnabled: true,
-  },
-  {
-    id: '2',
-    title: 'Daily standup reminder',
-    description: 'Send a reminder at 9 AM every day for the team standup',
-    connectorType: 'whatsapp' as const,
-    isEnabled: true,
-  },
-  {
-    id: '3',
-    title: 'Meeting notes summary',
-    description:
-      'Automatically post meeting notes summary after calendar events',
-    connectorType: 'whatsapp' as const,
-    isEnabled: false,
-  },
-];
+import {
+  useChatRules,
+  useWahaGroups,
+  useUpdateRule,
+} from '@repo/core';
 
 export default function GroupRulesPage() {
   const router = useRouter();
-  const _params = useParams();
+  const params = useParams();
+  const groupId = params.id as string;
   const [searchQuery, setSearchQuery] = useState('');
-  const [rules, setRules] = useState(MOCK_RULES);
 
-  const filteredRules = rules.filter(
-    rule =>
-      rule.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rule.description.toLowerCase().includes(searchQuery.toLowerCase()),
+  const { data: wahaData } = useWahaGroups({ moderation_status: true });
+  const { data: rules, isLoading, refetch } = useChatRules(groupId);
+  const { mutate: updateRule } = useUpdateRule();
+
+  const group = useMemo(() => {
+    const items = [...(wahaData?.groups ?? []), ...(wahaData?.chats ?? [])];
+    return items.find(item => item.w_id === groupId);
+  }, [wahaData, groupId]);
+
+  const filteredRules = useMemo(
+    () =>
+      (rules ?? []).filter(
+        rule =>
+          rule.raw_text.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [rules, searchQuery],
   );
 
-  const handleRuleToggle = (id: string, enabled: boolean) => {
-    setRules(prev =>
-      prev.map(rule =>
-        rule.id === id ? { ...rule, isEnabled: enabled } : rule,
-      ),
+  const handleRuleToggle = (
+    ruleId: string,
+    currentStatus: 'active' | 'inactive',
+    wId: string[],
+    rawText: string,
+  ) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    updateRule(
+      { rule_id: ruleId, w_id: wId, raw_text: rawText, status: newStatus },
+      { onSuccess: () => refetch() },
     );
   };
+
+  if (isLoading) {
+    return (
+      <ScreenLayout maxWidth="xl" className="py-6">
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-10 w-full" />
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <Skeleton key={i} className="h-20 w-full rounded-xl" />
+            ))}
+          </div>
+        </div>
+      </ScreenLayout>
+    );
+  }
+
+  if (!group) {
+    return (
+      <ScreenLayout maxWidth="xl" className="py-6">
+        <div className="py-12 text-center">
+          <p className="text-muted-foreground">Group not found</p>
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => router.push(ROUTES.GROUPS)}
+          >
+            Back to Groups
+          </Button>
+        </div>
+      </ScreenLayout>
+    );
+  }
 
   return (
     <ScreenLayout maxWidth="xl" className="py-6">
@@ -85,10 +109,13 @@ export default function GroupRulesPage() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-foreground">
-                  {MOCK_GROUP.name}
+                  {group.chat_name}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  {MOCK_GROUP.memberCount} members
+                  {group.num_active_rules + group.num_inactive_rules} rule
+                  {(group.num_active_rules + group.num_inactive_rules) !== 1
+                    ? 's'
+                    : ''}
                 </p>
               </div>
             </div>
@@ -119,19 +146,29 @@ export default function GroupRulesPage() {
           <div className="space-y-3">
             {filteredRules.map((rule, index) => (
               <motion.div
-                key={rule.id}
+                key={rule.rule_id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
                 <RuleItem
-                  id={rule.id}
-                  title={rule.title}
-                  description={rule.description}
-                  connectorType={rule.connectorType}
-                  isEnabled={rule.isEnabled}
-                  onToggle={enabled => handleRuleToggle(rule.id, enabled)}
-                  onClick={() => router.push(ROUTES.RULES_EDIT(rule.id))}
+                  id={rule.rule_id}
+                  title={
+                    rule.raw_text.slice(0, 50) +
+                    (rule.raw_text.length > 50 ? '...' : '')
+                  }
+                  description={rule.raw_text}
+                  connectorType="whatsapp"
+                  isEnabled={rule.status === 'active'}
+                  onToggle={() =>
+                    handleRuleToggle(
+                      rule.rule_id,
+                      rule.status ?? 'active',
+                      rule.w_id,
+                      rule.raw_text,
+                    )
+                  }
+                  onClick={() => router.push(ROUTES.RULES_EDIT(rule.rule_id))}
                 />
               </motion.div>
             ))}
